@@ -5,6 +5,17 @@ import (
 	"os"
 )
 
+type ActionFunction func()
+
+type Action struct {
+	doFn   ActionFunction
+	undoFn ActionFunction
+}
+
+func (m *model) submitAction(doFn ActionFunction, undoFn ActionFunction) {
+	m.pendingActions <- Action{doFn, undoFn}
+}
+
 func (m *model) Up() {
 	if m.editRow > 0 {
 		m.editRow--
@@ -77,18 +88,47 @@ func (m *model) PrevTrack() {
 }
 
 func (m *model) DeleteLeft() {
-	if m.editTrack > 0 || m.editColumn > 0 {
-		m.Left()
-		m.setByte(0)
-	}
+	var prevByte byte
+	m.submitAction(
+		func() {
+			if m.editTrack > 0 || m.editColumn > 0 {
+				m.Left()
+				prevByte = m.getByte()
+				m.setByte(0)
+			}
+		},
+		func() {
+			m.setByte(prevByte)
+			m.Right()
+		},
+	)
 }
 
 func (m *model) DeleteUnder() {
-	m.setByte(0)
+	var prevByte byte
+	m.submitAction(
+		func() {
+			prevByte = m.getByte()
+			m.setByte(0)
+		},
+		func() {
+			m.setByte(prevByte)
+		},
+	)
 }
 
 func (m *model) InsertBlank() {
-	m.insertByte(0)
+	var prevByte byte
+	m.submitAction(
+		func() {
+			prevByte = m.getByte()
+			m.insertByte(0)
+		},
+		func() {
+			m.Left()
+			m.setByte(prevByte)
+		},
+	)
 }
 
 func (m *model) PlayOrStop() {
@@ -118,10 +158,20 @@ func (m *model) LoadSong() {
 		m.SetError(err)
 		return
 	}
-	if err := json.Unmarshal(b, &m.song); err != nil {
+	song := &Song{}
+	if err := json.Unmarshal(b, song); err != nil {
 		m.SetError(err)
 		return
 	}
+	prevSong := m.song
+	m.submitAction(
+		func() {
+			m.SetSong(song)
+		},
+		func() {
+			m.SetSong(prevSong)
+		},
+	)
 }
 
 func (m *model) SaveSong() {
@@ -137,4 +187,23 @@ func (m *model) SaveSong() {
 		m.SetError(err)
 		return
 	}
+}
+
+func (m *model) Undo() {
+	if len(m.undoableActions) == 0 {
+		return
+	}
+	lastAction := m.undoableActions[len(m.undoableActions)-1]
+	m.undoableActions = m.undoableActions[:len(m.undoableActions)-1]
+	m.undoneActions = append(m.undoneActions, lastAction)
+	m.submitAction(lastAction.undoFn, nil)
+}
+
+func (m *model) Redo() {
+	if len(m.undoneActions) == 0 {
+		return
+	}
+	lastAction := m.undoneActions[len(m.undoneActions)-1]
+	m.undoneActions = m.undoneActions[:len(m.undoneActions)-1]
+	m.submitAction(lastAction.doFn, lastAction.undoFn)
 }

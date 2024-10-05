@@ -7,6 +7,10 @@ import (
 	"math"
 )
 
+const (
+	MaxUndoableActions = 64
+)
+
 type Row = []MidiMessage
 type Pattern = []Row
 
@@ -23,31 +27,48 @@ type Song struct {
 }
 
 type model struct {
-	err          error
-	keymap       *KeyMap
-	mode         int
-	windowWidth  int
-	windowHeight int
-	me           *MidiEngine
-	song         Song
-	editPattern  int
-	editRow      int
-	editRow0     int
-	editTrack    int
-	editTrack0   int
-	editColumn   int
-	playPattern  int
-	playRow      int
-	playTick     int
-	playFrame    uint64
-	isPlaying    bool
-	startRow     int
-	commandModel textinput.Model
-	filename     string
+	err             error
+	keymap          *KeyMap
+	mode            int
+	windowWidth     int
+	windowHeight    int
+	me              *MidiEngine
+	song            *Song
+	editPattern     int
+	editRow         int
+	editRow0        int
+	editTrack       int
+	editTrack0      int
+	editColumn      int
+	playPattern     int
+	playRow         int
+	playTick        int
+	playFrame       uint64
+	isPlaying       bool
+	startRow        int
+	commandModel    textinput.Model
+	filename        string
+	pendingActions  chan Action
+	undoableActions []Action
+	undoneActions   []Action
 }
 
 func (m *model) SetError(err error) {
 	m.err = err
+}
+
+func (m *model) SetSong(song *Song) {
+	m.song = song
+	m.editPattern = 0
+	m.editRow = 0
+	m.editRow0 = 0
+	m.editTrack = 0
+	m.editTrack0 = 0
+	m.editColumn = 0
+	m.playPattern = 0
+	m.playRow = 0
+	m.playTick = 0
+	m.startRow = 0
 }
 
 func (m *model) Play() {
@@ -93,6 +114,16 @@ func (m *model) GetFramesPerTick() int {
 type redrawMsg struct{}
 
 func (m *model) Process(nframes uint32) int {
+loop:
+	for {
+		select {
+		case action := <-m.pendingActions:
+			action.doFn()
+			program.Send(action)
+		default:
+			break loop
+		}
+	}
 	outPort := m.me.outPort
 	buf := outPort.MidiClearBuffer(nframes)
 	if !m.isPlaying {
@@ -139,18 +170,42 @@ func makePattern(rowCount, columnCount int) Pattern {
 }
 
 func (m *model) Init() tea.Cmd {
+	m.pendingActions = make(chan Action, 64)
 	m.keymap = &defaultKeyMap
 	m.commandModel = textinput.New()
-	m.song.BPM = 120
-	m.song.LPB = 4
-	m.song.TPL = 6
-	m.song.Patterns = make([]Pattern, 256)
+	m.song = &Song{
+		BPM:      120,
+		LPB:      4,
+		TPL:      6,
+		Patterns: make([]Pattern, 1, 256),
+	}
 	m.song.Patterns[0] = makePattern(64, 16)
 	m.me = &MidiEngine{}
 	if err := m.me.Open(m.Process); err != nil {
 		return m.QuitWithError(err)
 	}
 	return nil
+}
+
+func (m *model) getByte() byte {
+	p := m.song.Patterns[m.editPattern]
+	row := p[m.editRow]
+	msg := &row[m.editTrack]
+	switch m.editColumn {
+	case 0:
+		return msg[0] & 0xf0 >> 4
+	case 1:
+		return msg[0] & 0x0f
+	case 2:
+		return msg[1] & 0xf0 >> 4
+	case 3:
+		return msg[1] & 0x0f
+	case 4:
+		return msg[2] & 0xf0 >> 4
+	case 5:
+		return msg[2] & 0x0f
+	}
+	return 0
 }
 
 func (m *model) setByte(b byte) {
@@ -179,6 +234,15 @@ func (m *model) insertByte(b byte) {
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if action, ok := msg.(Action); ok {
+		if action.undoFn != nil {
+			m.undoableActions = append(m.undoableActions, action)
+			if len(m.undoableActions) > MaxUndoableActions {
+				m.undoableActions = m.undoableActions[len(m.undoableActions)-MaxUndoableActions:]
+			}
+		}
+		return m, nil
+	}
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
@@ -199,7 +263,17 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if value >= 0x61 {
 					value = value - 0x61 + 0x3a
 				}
-				m.insertByte(value - 0x30)
+				value -= 0x30
+				prevByte := m.getByte()
+				m.submitAction(
+					func() {
+						m.insertByte(value)
+					},
+					func() {
+						m.Left()
+						m.setByte(prevByte)
+					},
+				)
 			default:
 				switch {
 				case key.Matches(msg, m.keymap.Quit):
@@ -232,6 +306,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.SetStartRow()
 				case key.Matches(msg, m.keymap.EnterCommand):
 					m.EnterCommand()
+				case key.Matches(msg, m.keymap.Undo):
+					m.Undo()
+				case key.Matches(msg, m.keymap.Redo):
+					m.Redo()
 				}
 			}
 		}

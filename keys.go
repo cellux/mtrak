@@ -20,12 +20,14 @@ type KeyMap struct {
 	PlayOrStop   key.Binding
 	SetStartRow  key.Binding
 	EnterCommand key.Binding
+	Undo         key.Binding
+	Redo         key.Binding
 }
 
 var defaultKeyMap = KeyMap{
 	Quit: key.NewBinding(
-		key.WithKeys("ctrl+c"),
-		key.WithHelp("ctrl+c", "quit"),
+		key.WithKeys("ctrl+c", "ctrl+q"),
+		key.WithHelp("C-c|C-q", "quit"),
 	),
 	Up: key.NewBinding(
 		key.WithKeys("up"),
@@ -56,8 +58,8 @@ var defaultKeyMap = KeyMap{
 		key.WithHelp("tab", "next track"),
 	),
 	PrevTrack: key.NewBinding(
-		key.WithKeys("shift+tab"),
-		key.WithHelp("shift+tab", "previous track"),
+		key.WithKeys("S+tab"),
+		key.WithHelp("S+tab", "previous track"),
 	),
 	DeleteLeft: key.NewBinding(
 		key.WithKeys("backspace"),
@@ -77,10 +79,18 @@ var defaultKeyMap = KeyMap{
 	),
 	SetStartRow: key.NewBinding(
 		key.WithKeys("s", "alt+ "),
-		key.WithHelp("s/alt+space", "set start row"),
+		key.WithHelp("s/M-space", "set start row"),
 	),
 	EnterCommand: key.NewBinding(
 		key.WithKeys(":"),
 		key.WithHelp(":", "enter command"),
+	),
+	Undo: key.NewBinding(
+		key.WithKeys("ctrl+z"),
+		key.WithHelp("C-z", "undo"),
+	),
+	Redo: key.NewBinding(
+		key.WithKeys("ctrl+r"),
+		key.WithHelp("C-r", "redo"),
 	),
 }
