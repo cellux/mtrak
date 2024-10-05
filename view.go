@@ -20,6 +20,9 @@ var (
 	playRowStyle = lipgloss.NewStyle().Inline(true).
 			Background(lipgloss.Color("#008000")).
 			Foreground(lipgloss.Color("#ffffff"))
+	errorStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#ffffff")).
+			Background(lipgloss.Color("#ff0000"))
 )
 
 const hexDigits = "0123456789ABCDEF"
@@ -27,7 +30,7 @@ const hexDigits = "0123456789ABCDEF"
 func (m *model) HeaderView() string {
 	var rb RowBuilder
 	rb.WriteString("BPM: ")
-	rb.WriteString(fmt.Sprintf("%d", m.bpm))
+	rb.WriteString(fmt.Sprintf("%d", m.song.BPM))
 	rb.WriteByte(' ')
 	rb.WriteString("SR: ")
 	rb.WriteString(fmt.Sprintf("%d", m.GetSampleRate()))
@@ -42,10 +45,10 @@ func (m *model) HeaderView() string {
 	rb.WriteString(fmt.Sprintf("%d", m.GetFramesPerTick()))
 	rb.WriteByte(' ')
 	rb.WriteString("LPB: ")
-	rb.WriteString(fmt.Sprintf("%d", m.lpb))
+	rb.WriteString(fmt.Sprintf("%d", m.song.LPB))
 	rb.WriteByte(' ')
 	rb.WriteString("TPL: ")
-	rb.WriteString(fmt.Sprintf("%d", m.tpl))
+	rb.WriteString(fmt.Sprintf("%d", m.song.TPL))
 	rb.WriteByte(' ')
 	rb.WriteString("isPlaying: ")
 	rb.WriteString(fmt.Sprintf("%v", m.isPlaying))
@@ -59,7 +62,7 @@ func (m *model) HeaderView() string {
 }
 
 func (m *model) PatternView(patternHeight int) string {
-	p := m.patterns[m.editPattern]
+	p := m.song.Patterns[m.editPattern]
 	var rb RowBuilder
 	numRows := patternHeight - 2 // borders
 	if numRows <= 0 {
@@ -115,13 +118,33 @@ func (m *model) PatternView(patternHeight int) string {
 	return patternStyle.Render(lipgloss.JoinVertical(0, rowStrings...))
 }
 
+func (m *model) CommandView() string {
+	return m.commandModel.View()
+}
+
+func (m *model) ErrorView() string {
+	return errorStyle.Render(fmt.Sprintf("%s", m.err))
+}
+
 func (m *model) View() string {
 	patternHeight := m.windowHeight - 1
+	if m.mode == CommandMode {
+		patternHeight--
+	}
+	if m.err != nil {
+		patternHeight--
+	}
 	if patternHeight <= 0 {
 		return ""
 	}
-	return lipgloss.JoinVertical(0,
-		m.HeaderView(),
-		m.PatternView(patternHeight),
-	)
+	var views []string
+	views = append(views, m.HeaderView())
+	views = append(views, m.PatternView(patternHeight))
+	if m.mode == CommandMode {
+		views = append(views, m.CommandView())
+	}
+	if m.err != nil {
+		views = append(views, m.ErrorView())
+	}
+	return lipgloss.JoinVertical(lipgloss.Top, views...)
 }

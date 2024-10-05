@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"math"
 )
@@ -9,16 +10,26 @@ import (
 type Row = []MidiMessage
 type Pattern = []Row
 
+const (
+	EditMode    = 0
+	CommandMode = 1
+)
+
+type Song struct {
+	BPM      int       `json:"bpm"` // beats per minute
+	LPB      int       `json:"lpb"` // lines per beat
+	TPL      int       `json:"tpl"` // ticks per line
+	Patterns []Pattern `json:"patterns"`
+}
+
 type model struct {
 	err          error
 	keymap       *KeyMap
+	mode         int
 	windowWidth  int
 	windowHeight int
 	me           *MidiEngine
-	bpm          int // beats per minute
-	lpb          int // lines per beat
-	tpl          int // ticks per line
-	patterns     []Pattern
+	song         Song
 	editPattern  int
 	editRow      int
 	editRow0     int
@@ -31,6 +42,12 @@ type model struct {
 	playFrame    uint64
 	isPlaying    bool
 	startRow     int
+	commandModel textinput.Model
+	filename     string
+}
+
+func (m *model) SetError(err error) {
+	m.err = err
 }
 
 func (m *model) Play() {
@@ -53,7 +70,7 @@ func (m *model) GetSampleRate() int {
 }
 
 func (m *model) GetBeatsPerSecond() float64 {
-	return float64(m.bpm) / 60.0
+	return float64(m.song.BPM) / 60.0
 }
 
 func (m *model) GetFramesPerBeat() int {
@@ -63,7 +80,7 @@ func (m *model) GetFramesPerBeat() int {
 }
 
 func (m *model) GetTicksPerBeat() int {
-	return m.tpl * m.lpb
+	return m.song.TPL * m.song.LPB
 }
 
 func (m *model) GetFramesPerTick() int {
@@ -87,7 +104,7 @@ func (m *model) Process(nframes uint32) int {
 	for i := range nframes {
 		if m.playFrame%framesPerTick == 0 {
 			if m.playTick == 0 {
-				p := m.patterns[m.playPattern]
+				p := m.song.Patterns[m.playPattern]
 				row := p[m.playRow]
 				for _, msg := range row {
 					status := msg[0]
@@ -104,7 +121,7 @@ func (m *model) Process(nframes uint32) int {
 				program.Send(redrawMsg{})
 			}
 			m.playTick++
-			if m.playTick == m.tpl {
+			if m.playTick == m.song.TPL {
 				m.playTick = 0
 			}
 		}
@@ -123,11 +140,12 @@ func makePattern(rowCount, columnCount int) Pattern {
 
 func (m *model) Init() tea.Cmd {
 	m.keymap = &defaultKeyMap
-	m.bpm = 120
-	m.lpb = 4
-	m.tpl = 6
-	m.patterns = make([]Pattern, 256)
-	m.patterns[0] = makePattern(64, 16)
+	m.commandModel = textinput.New()
+	m.song.BPM = 120
+	m.song.LPB = 4
+	m.song.TPL = 6
+	m.song.Patterns = make([]Pattern, 256)
+	m.song.Patterns[0] = makePattern(64, 16)
 	m.me = &MidiEngine{}
 	if err := m.me.Open(m.Process); err != nil {
 		return m.QuitWithError(err)
@@ -136,7 +154,7 @@ func (m *model) Init() tea.Cmd {
 }
 
 func (m *model) setByte(b byte) {
-	p := m.patterns[m.editPattern]
+	p := m.song.Patterns[m.editPattern]
 	row := p[m.editRow]
 	msg := &row[m.editTrack]
 	switch m.editColumn {
@@ -161,53 +179,78 @@ func (m *model) insertByte(b byte) {
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd = nil
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f":
-			value := byte(msg.Runes[0])
-			if value >= 0x61 {
-				value = value - 0x61 + 0x3a
-			}
-			m.insertByte(value - 0x30)
-		default:
-			switch {
-			case key.Matches(msg, m.keymap.Quit):
-				cmd = tea.Quit
-			case key.Matches(msg, m.keymap.Up):
-				m.Up()
-			case key.Matches(msg, m.keymap.Down):
-				m.Down()
-			case key.Matches(msg, m.keymap.PageUp):
-				m.PageUp()
-			case key.Matches(msg, m.keymap.PageDown):
-				m.PageDown()
-			case key.Matches(msg, m.keymap.Left):
-				m.Left()
-			case key.Matches(msg, m.keymap.Right):
-				m.Right()
-			case key.Matches(msg, m.keymap.NextTrack):
-				m.NextTrack()
-			case key.Matches(msg, m.keymap.PrevTrack):
-				m.PrevTrack()
-			case key.Matches(msg, m.keymap.DeleteLeft):
-				m.DeleteLeft()
-			case key.Matches(msg, m.keymap.DeleteUnder):
-				m.DeleteUnder()
-			case key.Matches(msg, m.keymap.InsertBlank):
-				m.InsertBlank()
-			case key.Matches(msg, m.keymap.PlayOrStop):
-				m.PlayOrStop()
-			case key.Matches(msg, m.keymap.SetStartRow):
-				m.SetStartRow()
+	var cmds []tea.Cmd
+	var cmd tea.Cmd
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
+		case "esc":
+			m.err = nil
+		}
+	}
+	if windowSizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
+		m.windowWidth = windowSizeMsg.Width
+		m.windowHeight = windowSizeMsg.Height
+	} else if m.mode == EditMode {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f":
+				value := byte(msg.Runes[0])
+				if value >= 0x61 {
+					value = value - 0x61 + 0x3a
+				}
+				m.insertByte(value - 0x30)
+			default:
+				switch {
+				case key.Matches(msg, m.keymap.Quit):
+					cmds = append(cmds, tea.Quit)
+				case key.Matches(msg, m.keymap.Up):
+					m.Up()
+				case key.Matches(msg, m.keymap.Down):
+					m.Down()
+				case key.Matches(msg, m.keymap.PageUp):
+					m.PageUp()
+				case key.Matches(msg, m.keymap.PageDown):
+					m.PageDown()
+				case key.Matches(msg, m.keymap.Left):
+					m.Left()
+				case key.Matches(msg, m.keymap.Right):
+					m.Right()
+				case key.Matches(msg, m.keymap.NextTrack):
+					m.NextTrack()
+				case key.Matches(msg, m.keymap.PrevTrack):
+					m.PrevTrack()
+				case key.Matches(msg, m.keymap.DeleteLeft):
+					m.DeleteLeft()
+				case key.Matches(msg, m.keymap.DeleteUnder):
+					m.DeleteUnder()
+				case key.Matches(msg, m.keymap.InsertBlank):
+					m.InsertBlank()
+				case key.Matches(msg, m.keymap.PlayOrStop):
+					m.PlayOrStop()
+				case key.Matches(msg, m.keymap.SetStartRow):
+					m.SetStartRow()
+				case key.Matches(msg, m.keymap.EnterCommand):
+					m.EnterCommand()
+				}
 			}
 		}
-	case tea.WindowSizeMsg:
-		m.windowWidth = msg.Width
-		m.windowHeight = msg.Height
+	} else if m.mode == CommandMode {
+		m.commandModel, cmd = m.commandModel.Update(msg)
+		cmds = append(cmds, cmd)
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			switch keyMsg.String() {
+			case "enter":
+				command := m.commandModel.Value()
+				m.ExecuteCommand(command)
+				fallthrough
+			case "esc":
+				m.mode = EditMode
+				m.commandModel.Blur()
+			}
+		}
 	}
-	return m, cmd
+	return m, tea.Batch(cmds...)
 }
 
 func (m *model) Close() error {

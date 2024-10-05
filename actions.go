@@ -1,5 +1,10 @@
 package main
 
+import (
+	"encoding/json"
+	"os"
+)
+
 func (m *model) Up() {
 	if m.editRow > 0 {
 		m.editRow--
@@ -7,7 +12,7 @@ func (m *model) Up() {
 }
 
 func (m *model) Down() {
-	p := m.patterns[m.editPattern]
+	p := m.song.Patterns[m.editPattern]
 	if m.editRow < len(p)-1 {
 		m.editRow++
 	}
@@ -25,7 +30,7 @@ func (m *model) PageUp() {
 }
 
 func (m *model) PageDown() {
-	p := m.patterns[m.editPattern]
+	p := m.song.Patterns[m.editPattern]
 	m.editRow += 16
 	if m.editRow%16 != 0 {
 		m.editRow -= m.editRow % 16
@@ -45,7 +50,7 @@ func (m *model) Left() {
 }
 
 func (m *model) Right() {
-	p := m.patterns[m.editPattern]
+	p := m.song.Patterns[m.editPattern]
 	row := p[m.editRow]
 	if m.editColumn < 5 {
 		m.editColumn++
@@ -56,7 +61,7 @@ func (m *model) Right() {
 }
 
 func (m *model) NextTrack() {
-	p := m.patterns[m.editPattern]
+	p := m.song.Patterns[m.editPattern]
 	row := p[m.editRow]
 	if m.editTrack < len(row)-1 {
 		m.editTrack++
@@ -97,4 +102,39 @@ func (m *model) PlayOrStop() {
 
 func (m *model) SetStartRow() {
 	m.startRow = m.editRow
+}
+
+func (m *model) EnterCommand() {
+	m.mode = CommandMode
+	m.commandModel.Focus()
+}
+
+func (m *model) LoadSong() {
+	if m.filename == "" {
+		return
+	}
+	b, err := os.ReadFile(m.filename)
+	if err != nil {
+		m.SetError(err)
+		return
+	}
+	if err := json.Unmarshal(b, &m.song); err != nil {
+		m.SetError(err)
+		return
+	}
+}
+
+func (m *model) SaveSong() {
+	if m.filename == "" {
+		return
+	}
+	b, err := json.Marshal(m.song)
+	if err != nil {
+		m.SetError(err)
+		return
+	}
+	if err := os.WriteFile(m.filename, b, 0o644); err != nil {
+		m.SetError(err)
+		return
+	}
 }

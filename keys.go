@@ -5,20 +5,21 @@ import (
 )
 
 type KeyMap struct {
-	Quit        key.Binding
-	Up          key.Binding
-	Down        key.Binding
-	PageUp      key.Binding
-	PageDown    key.Binding
-	Left        key.Binding
-	Right       key.Binding
-	NextTrack   key.Binding
-	PrevTrack   key.Binding
-	DeleteLeft  key.Binding
-	DeleteUnder key.Binding
-	InsertBlank key.Binding
-	PlayOrStop  key.Binding
-	SetStartRow key.Binding
+	Quit         key.Binding
+	Up           key.Binding
+	Down         key.Binding
+	PageUp       key.Binding
+	PageDown     key.Binding
+	Left         key.Binding
+	Right        key.Binding
+	NextTrack    key.Binding
+	PrevTrack    key.Binding
+	DeleteLeft   key.Binding
+	DeleteUnder  key.Binding
+	InsertBlank  key.Binding
+	PlayOrStop   key.Binding
+	SetStartRow  key.Binding
+	EnterCommand key.Binding
 }
 
 var defaultKeyMap = KeyMap{
@@ -77,5 +78,9 @@ var defaultKeyMap = KeyMap{
 	SetStartRow: key.NewBinding(
 		key.WithKeys("s", "alt+ "),
 		key.WithHelp("s/alt+space", "set start row"),
+	),
+	EnterCommand: key.NewBinding(
+		key.WithKeys(":"),
+		key.WithHelp(":", "enter command"),
 	),
 }
