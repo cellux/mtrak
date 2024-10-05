@@ -327,6 +327,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "esc":
 				m.mode = EditMode
 				m.commandModel.Blur()
+				m.commandModel.Reset()
 			}
 		}
 	}
