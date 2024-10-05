@@ -286,6 +286,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.PageUp()
 				case key.Matches(msg, m.keymap.PageDown):
 					m.PageDown()
+				case key.Matches(msg, m.keymap.JumpToFirstRow):
+					m.JumpToFirstRow()
+				case key.Matches(msg, m.keymap.JumpToLastRow):
+					m.JumpToLastRow()
 				case key.Matches(msg, m.keymap.Left):
 					m.Left()
 				case key.Matches(msg, m.keymap.Right):
@@ -294,6 +298,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.NextTrack()
 				case key.Matches(msg, m.keymap.PrevTrack):
 					m.PrevTrack()
+				case key.Matches(msg, m.keymap.JumpToFirstTrack):
+					m.JumpToFirstTrack()
+				case key.Matches(msg, m.keymap.JumpToLastTrack):
+					m.JumpToLastTrack()
 				case key.Matches(msg, m.keymap.DeleteLeft):
 					m.DeleteLeft()
 				case key.Matches(msg, m.keymap.DeleteUnder):

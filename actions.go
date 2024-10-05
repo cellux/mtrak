@@ -52,6 +52,15 @@ func (m *model) PageDown() {
 	}
 }
 
+func (m *model) JumpToFirstRow() {
+	m.editRow = 0
+}
+
+func (m *model) JumpToLastRow() {
+	p := m.song.Patterns[m.editPattern]
+	m.editRow = len(p) - 1
+}
+
 func (m *model) Left() {
 	if m.editColumn > 0 {
 		m.editColumn--
@@ -86,6 +95,18 @@ func (m *model) PrevTrack() {
 		m.editTrack--
 		m.editColumn = 0
 	}
+}
+
+func (m *model) JumpToFirstTrack() {
+	m.editTrack = 0
+	m.editColumn = 0
+}
+
+func (m *model) JumpToLastTrack() {
+	p := m.song.Patterns[m.editPattern]
+	row := p[m.editRow]
+	m.editTrack = len(row) - 1
+	m.editColumn = 0
 }
 
 func (m *model) DeleteLeft() {
