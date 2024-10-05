@@ -135,19 +135,6 @@ func (m *model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *model) sanitize() {
-	patternHeight := m.windowHeight - 3
-	if patternHeight <= 0 {
-		return
-	}
-	if m.editRow < m.editRow0 {
-		m.editRow0 = m.editRow
-	}
-	if m.editRow >= m.editRow0+patternHeight {
-		m.editRow0 = m.editRow - patternHeight + 1
-	}
-}
-
 func (m *model) setByte(b byte) {
 	p := m.patterns[m.editPattern]
 	row := p[m.editRow]
@@ -220,7 +207,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.windowWidth = msg.Width
 		m.windowHeight = msg.Height
 	}
-	m.sanitize()
 	return m, cmd
 }
 

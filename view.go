@@ -61,9 +61,19 @@ func (m *model) HeaderView() string {
 func (m *model) PatternView(patternHeight int) string {
 	p := m.patterns[m.editPattern]
 	var rb RowBuilder
-	rowStrings := make([]string, 0, patternHeight)
+	numRows := patternHeight - 2 // borders
+	if numRows <= 0 {
+		return ""
+	}
+	if m.editRow < m.editRow0 {
+		m.editRow0 = m.editRow
+	}
+	if m.editRow >= m.editRow0+numRows {
+		m.editRow0 = m.editRow - numRows + 1
+	}
+	rowStrings := make([]string, 0, numRows)
 	var oldStyle lipgloss.Style
-	for y := m.editRow0; y < len(p) && y < m.editRow0+patternHeight; y++ {
+	for y := m.editRow0; y < len(p) && y < m.editRow0+numRows; y++ {
 		row := p[y]
 		isCursorInRow := m.editRow == y
 		rb.SetStyle(rowStyle)
@@ -106,7 +116,7 @@ func (m *model) PatternView(patternHeight int) string {
 }
 
 func (m *model) View() string {
-	patternHeight := m.windowHeight - 3
+	patternHeight := m.windowHeight - 1
 	if patternHeight <= 0 {
 		return ""
 	}
