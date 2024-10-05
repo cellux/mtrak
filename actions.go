@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -176,6 +177,7 @@ func (m *model) LoadSong() {
 
 func (m *model) SaveSong() {
 	if m.filename == "" {
+		m.SetError(fmt.Errorf("no filename"))
 		return
 	}
 	b, err := json.Marshal(m.song)

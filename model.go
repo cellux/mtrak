@@ -310,6 +310,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.Undo()
 				case key.Matches(msg, m.keymap.Redo):
 					m.Redo()
+				case key.Matches(msg, m.keymap.Save):
+					m.SaveSong()
 				}
 			}
 		}

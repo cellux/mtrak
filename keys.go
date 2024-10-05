@@ -22,6 +22,7 @@ type KeyMap struct {
 	EnterCommand key.Binding
 	Undo         key.Binding
 	Redo         key.Binding
+	Save         key.Binding
 }
 
 var defaultKeyMap = KeyMap{
@@ -92,5 +93,9 @@ var defaultKeyMap = KeyMap{
 	Redo: key.NewBinding(
 		key.WithKeys("ctrl+r"),
 		key.WithHelp("C-r", "redo"),
+	),
+	Save: key.NewBinding(
+		key.WithKeys("ctrl+s"),
+		key.WithHelp("C-s", "save"),
 	),
 }
