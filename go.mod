@@ -3,6 +3,7 @@ module github.com/cellux/mtrak
 go 1.22.4
 
 require (
+	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.1.1
 	github.com/charmbracelet/lipgloss v0.13.0
 	github.com/xthexder/go-jack v0.0.0-20220805234212-bc8604043aba

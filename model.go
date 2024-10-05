@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"math"
 )
@@ -10,6 +11,7 @@ type Pattern = []Row
 
 type model struct {
 	err          error
+	keymap       *KeyMap
 	windowWidth  int
 	windowHeight int
 	me           *MidiEngine
@@ -120,6 +122,7 @@ func makePattern(rowCount, columnCount int) Pattern {
 }
 
 func (m *model) Init() tea.Cmd {
+	m.keymap = &defaultKeyMap
 	m.bpm = 120
 	m.lpb = 4
 	m.tpl = 6
@@ -132,78 +135,16 @@ func (m *model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *model) up() {
-	if m.editRow > 0 {
-		m.editRow--
+func (m *model) sanitize() {
+	patternHeight := m.windowHeight - 3
+	if patternHeight <= 0 {
+		return
 	}
-}
-
-func (m *model) down() {
-	p := m.patterns[m.editPattern]
-	if m.editRow < len(p)-1 {
-		m.editRow++
+	if m.editRow < m.editRow0 {
+		m.editRow0 = m.editRow
 	}
-}
-
-func (m *model) pgup() {
-	if m.editRow%16 != 0 {
-		m.editRow -= m.editRow % 16
-	} else {
-		m.editRow -= 16
-	}
-	if m.editRow < 0 {
-		m.editRow = 0
-	}
-}
-
-func (m *model) pgdown() {
-	p := m.patterns[m.editPattern]
-	m.editRow += 16
-	if m.editRow%16 != 0 {
-		m.editRow -= m.editRow % 16
-	}
-	if m.editRow >= len(p) {
-		m.editRow = len(p) - 1
-	}
-}
-
-func (m *model) left() {
-	if m.editColumn > 0 {
-		m.editColumn--
-	} else if m.editTrack > 0 {
-		m.editTrack--
-		m.editColumn = 5
-	}
-}
-
-func (m *model) right() {
-	p := m.patterns[m.editPattern]
-	row := p[m.editRow]
-	if m.editColumn < 5 {
-		m.editColumn++
-	} else if m.editTrack < len(row)-1 {
-		m.editTrack++
-		m.editColumn = 0
-	}
-}
-
-func (m *model) del() {
-	m.setByte(0)
-}
-
-func (m *model) tab() {
-	p := m.patterns[m.editPattern]
-	row := p[m.editRow]
-	if m.editTrack < len(row)-1 {
-		m.editTrack++
-		m.editColumn = 0
-	}
-}
-
-func (m *model) shiftTab() {
-	if m.editTrack > 0 {
-		m.editTrack--
-		m.editColumn = 0
+	if m.editRow >= m.editRow0+patternHeight {
+		m.editRow0 = m.editRow - patternHeight + 1
 	}
 }
 
@@ -229,20 +170,7 @@ func (m *model) setByte(b byte) {
 
 func (m *model) insertByte(b byte) {
 	m.setByte(b)
-	m.right()
-}
-
-func (m *model) sanitize() {
-	patternHeight := m.windowHeight - 3
-	if patternHeight <= 0 {
-		return
-	}
-	if m.editRow < m.editRow0 {
-		m.editRow0 = m.editRow
-	}
-	if m.editRow >= m.editRow0+patternHeight {
-		m.editRow0 = m.editRow - patternHeight + 1
-	}
+	m.Right()
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -250,46 +178,43 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c":
-			cmd = tea.Quit
-		case ".":
-			m.insertByte(0)
 		case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f":
 			value := byte(msg.Runes[0])
 			if value >= 0x61 {
 				value = value - 0x61 + 0x3a
 			}
 			m.insertByte(value - 0x30)
-		case "up":
-			m.up()
-		case "down":
-			m.down()
-		case "pgup":
-			m.pgup()
-		case "pgdown":
-			m.pgdown()
-		case "left":
-			m.left()
-		case "right":
-			m.right()
-		case "tab":
-			m.tab()
-		case "shift+tab":
-			m.shiftTab()
-		case "backspace":
-			if m.editTrack > 0 || m.editColumn > 0 {
-				m.left()
-				m.setByte(0)
+		default:
+			switch {
+			case key.Matches(msg, m.keymap.Quit):
+				cmd = tea.Quit
+			case key.Matches(msg, m.keymap.Up):
+				m.Up()
+			case key.Matches(msg, m.keymap.Down):
+				m.Down()
+			case key.Matches(msg, m.keymap.PageUp):
+				m.PageUp()
+			case key.Matches(msg, m.keymap.PageDown):
+				m.PageDown()
+			case key.Matches(msg, m.keymap.Left):
+				m.Left()
+			case key.Matches(msg, m.keymap.Right):
+				m.Right()
+			case key.Matches(msg, m.keymap.NextTrack):
+				m.NextTrack()
+			case key.Matches(msg, m.keymap.PrevTrack):
+				m.PrevTrack()
+			case key.Matches(msg, m.keymap.DeleteLeft):
+				m.DeleteLeft()
+			case key.Matches(msg, m.keymap.DeleteUnder):
+				m.DeleteUnder()
+			case key.Matches(msg, m.keymap.InsertBlank):
+				m.InsertBlank()
+			case key.Matches(msg, m.keymap.PlayOrStop):
+				m.PlayOrStop()
+			case key.Matches(msg, m.keymap.SetStartRow):
+				m.SetStartRow()
 			}
-		case " ":
-			if m.isPlaying {
-				m.Stop()
-			} else {
-				m.playRow = m.startRow
-				m.Play()
-			}
-		case "s", "alt+ ":
-			m.startRow = m.editRow
 		}
 	case tea.WindowSizeMsg:
 		m.windowWidth = msg.Width
