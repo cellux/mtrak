@@ -342,18 +342,17 @@ func (m *model) hasSelection() bool {
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if action, ok := msg.(Action); ok {
-		if action.undoFn != nil {
-			m.undoableActions = append(m.undoableActions, action)
+	var cmds []tea.Cmd
+	var cmd tea.Cmd
+	switch msg := msg.(type) {
+	case Action:
+		if msg.undoFn != nil {
+			m.undoableActions = append(m.undoableActions, msg)
 			if len(m.undoableActions) > MaxUndoableActions {
 				m.undoableActions = m.undoableActions[len(m.undoableActions)-MaxUndoableActions:]
 			}
 		}
 		return m, nil
-	}
-	var cmds []tea.Cmd
-	var cmd tea.Cmd
-	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
