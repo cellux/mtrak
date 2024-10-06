@@ -410,10 +410,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.NextTrack()
 				case key.Matches(msg, m.keymap.PrevTrack):
 					m.PrevTrack()
-				case key.Matches(msg, m.keymap.JumpToFirstTrack):
-					m.JumpToFirstTrack()
-				case key.Matches(msg, m.keymap.JumpToLastTrack):
-					m.JumpToLastTrack()
 				case key.Matches(msg, m.keymap.InsertBlank):
 					m.InsertBlank()
 				case key.Matches(msg, m.keymap.DeleteLeft):

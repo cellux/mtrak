@@ -157,17 +157,6 @@ func (m *model) PrevTrack() {
 	m.moveBrush(-6, 0)
 }
 
-func (m *model) JumpToFirstTrack() {
-	m.moveBrush(-m.brush.X, 0)
-}
-
-func (m *model) JumpToLastTrack() {
-	p := m.song.Patterns[m.editPattern]
-	editRow := p[m.editY]
-	patternWidth := len(editRow) * 6
-	m.moveBrush(patternWidth-m.brush.W-m.brush.X, 0)
-}
-
 func (m *model) InsertBlank() {
 	p := m.song.Patterns[m.editPattern]
 	editRow := p[m.editY]

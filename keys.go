@@ -5,35 +5,33 @@ import (
 )
 
 type KeyMap struct {
-	Quit             key.Binding
-	Up               key.Binding
-	Down             key.Binding
-	PageUp           key.Binding
-	PageDown         key.Binding
-	JumpToFirstRow   key.Binding
-	JumpToLastRow    key.Binding
-	Left             key.Binding
-	Right            key.Binding
-	NextTrack        key.Binding
-	PrevTrack        key.Binding
-	JumpToFirstTrack key.Binding
-	JumpToLastTrack  key.Binding
-	InsertBlank      key.Binding
-	DeleteLeft       key.Binding
-	IncBrushWidth    key.Binding
-	DecBrushWidth    key.Binding
-	IncBrushHeight   key.Binding
-	DecBrushHeight   key.Binding
-	InsertBlockV     key.Binding
-	DeleteBlockV     key.Binding
-	InsertBlockH     key.Binding
-	DeleteBlockH     key.Binding
-	PlayOrStop       key.Binding
-	SetPlayFromRow   key.Binding
-	EnterCommand     key.Binding
-	Undo             key.Binding
-	Redo             key.Binding
-	Save             key.Binding
+	Quit           key.Binding
+	Up             key.Binding
+	Down           key.Binding
+	PageUp         key.Binding
+	PageDown       key.Binding
+	JumpToFirstRow key.Binding
+	JumpToLastRow  key.Binding
+	Left           key.Binding
+	Right          key.Binding
+	NextTrack      key.Binding
+	PrevTrack      key.Binding
+	InsertBlank    key.Binding
+	DeleteLeft     key.Binding
+	IncBrushWidth  key.Binding
+	DecBrushWidth  key.Binding
+	IncBrushHeight key.Binding
+	DecBrushHeight key.Binding
+	InsertBlockV   key.Binding
+	DeleteBlockV   key.Binding
+	InsertBlockH   key.Binding
+	DeleteBlockH   key.Binding
+	PlayOrStop     key.Binding
+	SetPlayFromRow key.Binding
+	EnterCommand   key.Binding
+	Undo           key.Binding
+	Redo           key.Binding
+	Save           key.Binding
 }
 
 var defaultKeyMap = KeyMap{
@@ -58,12 +56,12 @@ var defaultKeyMap = KeyMap{
 		key.WithHelp("pgdown", "page down"),
 	),
 	JumpToFirstRow: key.NewBinding(
-		key.WithKeys("ctrl+home"),
-		key.WithHelp("C-home", "first row"),
+		key.WithKeys("home"),
+		key.WithHelp("home", "first row"),
 	),
 	JumpToLastRow: key.NewBinding(
-		key.WithKeys("ctrl+end"),
-		key.WithHelp("C-end", "last row"),
+		key.WithKeys("end"),
+		key.WithHelp("end", "last row"),
 	),
 	Left: key.NewBinding(
 		key.WithKeys("left"),
@@ -80,14 +78,6 @@ var defaultKeyMap = KeyMap{
 	PrevTrack: key.NewBinding(
 		key.WithKeys("shift+tab"),
 		key.WithHelp("S+tab", "previous track"),
-	),
-	JumpToFirstTrack: key.NewBinding(
-		key.WithKeys("home"),
-		key.WithHelp("home", "first track"),
-	),
-	JumpToLastTrack: key.NewBinding(
-		key.WithKeys("end"),
-		key.WithHelp("end", "last track"),
 	),
 	InsertBlank: key.NewBinding(
 		key.WithKeys("."),
