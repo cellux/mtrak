@@ -141,6 +141,7 @@ type model struct {
 	commandModel      textinput.Model
 	filename          string
 	pendingActions    chan Action
+	msgs              chan tea.Msg
 	undoableActions   []Action
 	undoneActions     []Action
 }
@@ -169,6 +170,7 @@ func (m *model) Reset() {
 	m.commandModel.Reset()
 	//m.filename
 	//m.pendingActions ?
+	//m.msgs ?
 	m.undoableActions = nil
 	m.undoneActions = nil
 }
@@ -237,7 +239,7 @@ loop:
 		select {
 		case action := <-m.pendingActions:
 			action.doFn()
-			program.Send(action)
+			m.msgs <- action
 		default:
 			break loop
 		}
@@ -268,12 +270,12 @@ loop:
 					// TODO: advance to next pattern in sequence
 					m.playRow = 0
 				}
+				m.msgs <- redrawMsg{}
 			}
 			m.playTick++
 			if m.playTick == m.song.TPL {
 				m.playTick = 0
 			}
-			program.Send(redrawMsg{})
 		}
 		m.playFrame++
 	}
@@ -303,7 +305,16 @@ func (m *model) Init() tea.Cmd {
 	m.song.Patterns[0] = makePattern(64, 16)
 	m.commandModel = textinput.New()
 	m.pendingActions = make(chan Action, 64)
+	m.msgs = make(chan tea.Msg, 64)
 	m.Reset()
+	go func() {
+		for {
+			select {
+			case msg := <-m.msgs:
+				program.Send(msg)
+			}
+		}
+	}()
 	return nil
 }
 
