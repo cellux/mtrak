@@ -191,6 +191,11 @@ func (m *model) SetSong(song *Song) {
 	m.song = song
 }
 
+func (m *model) ReplaceEditPattern(p Pattern) {
+	m.song.Patterns[m.editPattern] = p
+	m.fix()
+}
+
 func (m *model) Play() {
 	m.playTick = 0
 	m.isPlaying = true

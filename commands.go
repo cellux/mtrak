@@ -1,6 +1,7 @@
 package main
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -47,6 +48,36 @@ func (m *model) ExecuteCommand(command string) {
 				return
 			}
 			m.song.TPL = tpl
+		}
+	case "rows":
+		if len(items) > 1 {
+			rows, err := strconv.Atoi(items[1])
+			if err != nil {
+				m.SetError(err)
+				return
+			}
+			p := m.song.Patterns[m.editPattern]
+			if rows == len(p) {
+				return
+			}
+			clone := p.clone()
+			if rows < len(clone) {
+				clone = clone[:rows]
+			} else {
+				clone = slices.Grow(clone, rows-len(p))
+				trackCount := len(p[0])
+				for i := 0; i < rows-len(p); i++ {
+					clone = append(clone, make([]MidiMessage, trackCount))
+				}
+			}
+			m.submitAction(
+				func() {
+					m.ReplaceEditPattern(clone)
+				},
+				func() {
+					m.ReplaceEditPattern(p)
+				},
+			)
 		}
 	}
 }

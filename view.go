@@ -106,8 +106,8 @@ func (m *model) PatternView(r Rect) string {
 			rb.SetStyle(patternStyles[currentStyleIndex])
 		}
 	}
-	numRows := r.H - 2 // borders
-	numCols := r.W - 2 // borders
+	numRows := r.H - 2         // borders
+	numCols := r.W - 2 - 4 - 1 // borders + row index + gap
 	if numRows <= 0 || numCols <= 0 {
 		return ""
 	}
@@ -127,8 +127,7 @@ func (m *model) PatternView(r Rect) string {
 	for y := m.firstVisibleRow; y < min(patternHeight, m.firstVisibleRow+numRows); y++ {
 		row := p[y]
 		setStyle(0)
-		rb.WriteByte(hexDigits[y>>4])
-		rb.WriteByte(hexDigits[y&0x0f])
+		rb.WriteString(fmt.Sprintf("%04X", y))
 		rb.WriteByte(' ')
 		rowStyleIndex := 0
 		if y == m.playRow {

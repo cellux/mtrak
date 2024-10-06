@@ -281,10 +281,10 @@ func (m *model) InsertBlockV() {
 	clone.zeroBlock(m.brush)
 	m.submitAction(
 		func() {
-			m.song.Patterns[m.editPattern] = clone
+			m.ReplaceEditPattern(clone)
 		},
 		func() {
-			m.song.Patterns[m.editPattern] = p
+			m.ReplaceEditPattern(p)
 		},
 	)
 }
@@ -309,10 +309,10 @@ func (m *model) DeleteBlockV() {
 	clone.zeroBlock(blockToZero)
 	m.submitAction(
 		func() {
-			m.song.Patterns[m.editPattern] = clone
+			m.ReplaceEditPattern(clone)
 		},
 		func() {
-			m.song.Patterns[m.editPattern] = p
+			m.ReplaceEditPattern(p)
 		},
 	)
 }
@@ -332,10 +332,10 @@ func (m *model) InsertBlockH() {
 	clone.zeroBlock(m.brush)
 	m.submitAction(
 		func() {
-			m.song.Patterns[m.editPattern] = clone
+			m.ReplaceEditPattern(clone)
 		},
 		func() {
-			m.song.Patterns[m.editPattern] = p
+			m.ReplaceEditPattern(p)
 		},
 	)
 }
@@ -361,10 +361,10 @@ func (m *model) DeleteBlockH() {
 	clone.zeroBlock(blockToZero)
 	m.submitAction(
 		func() {
-			m.song.Patterns[m.editPattern] = clone
+			m.ReplaceEditPattern(clone)
 		},
 		func() {
-			m.song.Patterns[m.editPattern] = p
+			m.ReplaceEditPattern(p)
 		},
 	)
 }
