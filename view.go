@@ -5,25 +5,43 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var (
-	patternStyle = lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			Padding(0, 1)
-	trackStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#cccccc"))
-	highlightStyle = lipgloss.NewStyle().Inline(true).
-			Background(lipgloss.Color("#cccccc")).
-			Foreground(lipgloss.Color("#ffffff"))
-	rowStyle = lipgloss.NewStyle().Inline(true).
-			Background(lipgloss.Color("#222222")).
-			Foreground(lipgloss.Color("#cccccc"))
-	playRowStyle = lipgloss.NewStyle().Inline(true).
-			Background(lipgloss.Color("#008000")).
-			Foreground(lipgloss.Color("#ffffff"))
-	errorStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#ffffff")).
-			Background(lipgloss.Color("#ff0000"))
+type Color struct {
+	r, g, b int
+}
+
+func (c Color) LGC() lipgloss.Color {
+	return lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", c.r, c.g, c.b))
+}
+
+const (
+	highlightBit = 1
+	selectBit    = 2
+	brushBit     = 4
+	playBit      = 8
 )
+
+var patternStyles [16]lipgloss.Style
+
+func init() {
+	for i := 0; i < 16; i++ {
+		fg := Color{0xcc, 0xcc, 0xcc}
+		bg := Color{0x20, 0x20, 0x20}
+		if i&highlightBit > 0 {
+			fg = Color{0xff, 0xff, 0xff}
+			bg = Color{0x80, 0x80, 0x80}
+		}
+		if i&selectBit > 0 {
+			bg.r += 0x40
+		}
+		if i&brushBit > 0 {
+			bg.b += 0x40
+		}
+		if i&playBit > 0 {
+			bg.g += 0x40
+		}
+		patternStyles[i] = patternStyles[i].Foreground(fg.LGC()).Background(bg.LGC())
+	}
+}
 
 const hexDigits = "0123456789ABCDEF"
 
@@ -58,47 +76,93 @@ func (m *model) HeaderView() string {
 	rb.WriteByte(' ')
 	rb.WriteString("playFrame: ")
 	rb.WriteString(fmt.Sprintf("%v", m.playFrame))
+	rb.WriteByte(' ')
+	rb.WriteString("SEL: ")
+	rb.WriteString(fmt.Sprintf("(%d,%d):(%d,%d)",
+		m.selection.X,
+		m.selection.Y,
+		m.selection.W,
+		m.selection.H,
+	))
+	rb.WriteByte(' ')
+	rb.WriteString("BRU: ")
+	rb.WriteString(fmt.Sprintf("(%d,%d):(%d,%d)",
+		m.brush.X,
+		m.brush.Y,
+		m.brush.W,
+		m.brush.H,
+	))
 	return rb.String()
 }
 
-func (m *model) PatternView(patternHeight int) string {
+func (m *model) PatternView(r Rect) string {
 	p := m.song.Patterns[m.editPattern]
+	patternHeight := len(p)
 	var rb RowBuilder
-	numRows := patternHeight - 2 // borders
-	if numRows <= 0 {
+	var currentStyleIndex int
+	setStyle := func(index int) {
+		if index != currentStyleIndex {
+			currentStyleIndex = index
+			rb.SetStyle(patternStyles[currentStyleIndex])
+		}
+	}
+	numRows := r.H - 2 // borders
+	numCols := r.W - 2 // borders
+	if numRows <= 0 || numCols <= 0 {
 		return ""
 	}
-	if m.editRow < m.editRow0 {
-		m.editRow0 = m.editRow
+	if m.editX < m.firstVisibleTrack*6 {
+		m.firstVisibleTrack = m.editX / 6
 	}
-	if m.editRow >= m.editRow0+numRows {
-		m.editRow0 = m.editRow - numRows + 1
+	if m.editX >= m.firstVisibleTrack*6+numCols {
+		m.firstVisibleTrack = (m.editX - numCols) / 6
+	}
+	if m.editY < m.firstVisibleRow {
+		m.firstVisibleRow = m.editY
+	}
+	if m.editY >= m.firstVisibleRow+numRows {
+		m.firstVisibleRow = m.editY - numRows + 1
 	}
 	rowStrings := make([]string, 0, numRows)
-	var oldStyle lipgloss.Style
-	for y := m.editRow0; y < len(p) && y < m.editRow0+numRows; y++ {
+	for y := m.firstVisibleRow; y < min(patternHeight, m.firstVisibleRow+numRows); y++ {
 		row := p[y]
-		isCursorInRow := m.editRow == y
-		rb.SetStyle(rowStyle)
+		setStyle(0)
 		rb.WriteByte(hexDigits[y>>4])
 		rb.WriteByte(hexDigits[y&0x0f])
 		rb.WriteByte(' ')
+		rowStyleIndex := 0
 		if y == m.playRow {
-			rb.SetStyle(playRowStyle)
+			rowStyleIndex |= playBit
 		}
-		for x := m.editTrack0; x < len(row); x++ {
-			if x > m.editTrack0 {
+		x := 0
+		for t := m.firstVisibleTrack; t < len(row); t++ {
+			setStyle(rowStyleIndex)
+			if t > m.firstVisibleTrack {
 				rb.WriteByte(' ')
 			}
-			isCursorInTrack := m.editTrack == x
-			msg := row[x]
+			msg := row[t]
 			for i := 0; i < 3; i++ {
 				for j := 0; j < 2; j++ {
-					shallHighlight := isCursorInRow && isCursorInTrack && m.editColumn == i*2+j
-					if shallHighlight {
-						oldStyle = rb.style
-						rb.SetStyle(highlightStyle)
+					cellStyleIndex := rowStyleIndex
+					if y == m.editY && x == m.editX {
+						cellStyleIndex |= highlightBit
 					}
+					insideBrush := x >= m.brush.X &&
+						y >= m.brush.Y &&
+						x < (m.brush.X+m.brush.W) &&
+						y < (m.brush.Y+m.brush.H)
+					if insideBrush {
+						cellStyleIndex |= brushBit
+					}
+					insideSelection := m.hasSelection() &&
+						x >= m.selection.X &&
+						y >= m.selection.Y &&
+						x < (m.selection.X+m.selection.W) &&
+						y < (m.selection.Y+m.selection.H)
+					if insideSelection {
+						cellStyleIndex |= selectBit
+					}
+					setStyle(cellStyleIndex)
 					b := msg[i]
 					if b == 0 {
 						rb.WriteRune('·')
@@ -106,15 +170,16 @@ func (m *model) PatternView(patternHeight int) string {
 						shiftBits := (1 - j) * 4
 						rb.WriteByte(hexDigits[(b>>shiftBits)&0x0f])
 					}
-					if shallHighlight {
-						rb.SetStyle(oldStyle)
-					}
+					x++
 				}
 			}
 		}
 		rowStrings = append(rowStrings, rb.String())
 		rb.Reset()
 	}
+	patternStyle := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		Padding(0, 1)
 	return patternStyle.Render(lipgloss.JoinVertical(0, rowStrings...))
 }
 
@@ -123,23 +188,27 @@ func (m *model) CommandView() string {
 }
 
 func (m *model) ErrorView() string {
+	errorStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#ffffff")).
+		Background(lipgloss.Color("#ff0000"))
 	return errorStyle.Render(fmt.Sprintf("%s", m.err))
 }
 
 func (m *model) View() string {
-	patternHeight := m.windowHeight - 1
+	patternViewWidth := m.windowWidth
+	patternViewHeight := m.windowHeight - 1
 	if m.mode == CommandMode {
-		patternHeight--
+		patternViewHeight--
 	}
 	if m.err != nil {
-		patternHeight--
+		patternViewHeight--
 	}
-	if patternHeight <= 0 {
+	if patternViewHeight <= 0 {
 		return ""
 	}
 	var views []string
 	views = append(views, m.HeaderView())
-	views = append(views, m.PatternView(patternHeight))
+	views = append(views, m.PatternView(Rect{0, 0, patternViewWidth, patternViewHeight}))
 	if m.mode == CommandMode {
 		views = append(views, m.CommandView())
 	}

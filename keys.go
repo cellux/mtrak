@@ -18,11 +18,18 @@ type KeyMap struct {
 	PrevTrack        key.Binding
 	JumpToFirstTrack key.Binding
 	JumpToLastTrack  key.Binding
-	DeleteLeft       key.Binding
-	DeleteUnder      key.Binding
 	InsertBlank      key.Binding
+	DeleteLeft       key.Binding
+	IncBrushWidth    key.Binding
+	DecBrushWidth    key.Binding
+	IncBrushHeight   key.Binding
+	DecBrushHeight   key.Binding
+	InsertBlockV     key.Binding
+	DeleteBlockV     key.Binding
+	InsertBlockH     key.Binding
+	DeleteBlockH     key.Binding
 	PlayOrStop       key.Binding
-	SetStartRow      key.Binding
+	SetPlayFromRow   key.Binding
 	EnterCommand     key.Binding
 	Undo             key.Binding
 	Redo             key.Binding
@@ -82,25 +89,53 @@ var defaultKeyMap = KeyMap{
 		key.WithKeys("end"),
 		key.WithHelp("end", "last track"),
 	),
+	InsertBlank: key.NewBinding(
+		key.WithKeys("."),
+		key.WithHelp(".", "insert blank"),
+	),
 	DeleteLeft: key.NewBinding(
 		key.WithKeys("backspace"),
 		key.WithHelp("backspace", "delete left"),
 	),
-	DeleteUnder: key.NewBinding(
-		key.WithKeys("delete"),
-		key.WithHelp("delete", "delete under"),
+	IncBrushWidth: key.NewBinding(
+		key.WithKeys("ctrl+right"),
+		key.WithHelp("C-right", "increase brush width"),
 	),
-	InsertBlank: key.NewBinding(
-		key.WithKeys("."),
-		key.WithHelp(".", "insert blank"),
+	DecBrushWidth: key.NewBinding(
+		key.WithKeys("ctrl+left"),
+		key.WithHelp("C-left", "decrease brush width"),
+	),
+	IncBrushHeight: key.NewBinding(
+		key.WithKeys("ctrl+down"),
+		key.WithHelp("C-down", "increase brush height"),
+	),
+	DecBrushHeight: key.NewBinding(
+		key.WithKeys("ctrl+up"),
+		key.WithHelp("C-up", "decrease brush height"),
+	),
+	InsertBlockV: key.NewBinding(
+		key.WithKeys("insert", "ctrl+shift+down"),
+		key.WithHelp("ins/C-S-down", "insert vertical block"),
+	),
+	DeleteBlockV: key.NewBinding(
+		key.WithKeys("delete", "ctrl+shift+up"),
+		key.WithHelp("del/C-S-up", "delete vertical block"),
+	),
+	InsertBlockH: key.NewBinding(
+		key.WithKeys("ctrl+shift+right"),
+		key.WithHelp("C-S-right", "insert horizontal block"),
+	),
+	DeleteBlockH: key.NewBinding(
+		key.WithKeys("ctrl+shift+left"),
+		key.WithHelp("C-S-left", "delete vertical block"),
 	),
 	PlayOrStop: key.NewBinding(
 		key.WithKeys(" "),
 		key.WithHelp(" ", "play/stop"),
 	),
-	SetStartRow: key.NewBinding(
+	SetPlayFromRow: key.NewBinding(
 		key.WithKeys("s", "alt+ "),
-		key.WithHelp("s/M-space", "set start row"),
+		key.WithHelp("s/M-space", "set play from row"),
 	),
 	EnterCommand: key.NewBinding(
 		key.WithKeys(":"),
