@@ -126,7 +126,7 @@ type model struct {
 	me                *MidiEngine
 	song              *Song
 	brush             Rect
-	selection         Rect
+	sel               Rect
 	editPattern       int
 	editX             int
 	editY             int
@@ -155,7 +155,7 @@ func (m *model) Reset() {
 	//m.me
 	//m.song
 	m.brush = defaultBrush
-	m.selection = Rect{}
+	m.sel = Rect{}
 	m.editPattern = 0
 	m.editX = 0
 	m.editY = 0
@@ -349,7 +349,7 @@ func (m *model) zeroBlock() {
 }
 
 func (m *model) hasSelection() bool {
-	return m.selection.W > 0 && m.selection.H > 0
+	return m.sel.W > 0 && m.sel.H > 0
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

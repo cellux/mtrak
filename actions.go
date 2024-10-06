@@ -60,17 +60,17 @@ func (m *model) fix() {
 	}
 
 	// fix selection
-	if m.selection.X < 0 || m.selection.X >= patternWidth {
+	if m.sel.X < 0 || m.sel.X >= patternWidth {
 		m.SelectNone()
 	}
-	if m.selection.Y < 0 || m.selection.Y >= patternHeight {
+	if m.sel.Y < 0 || m.sel.Y >= patternHeight {
 		m.SelectNone()
 	}
-	if m.selection.X+m.selection.W > patternWidth {
-		m.selection.W = patternWidth - m.selection.X
+	if m.sel.X+m.sel.W > patternWidth {
+		m.sel.W = patternWidth - m.sel.X
 	}
-	if m.selection.Y+m.selection.H > patternHeight {
-		m.selection.H = patternHeight - m.selection.Y
+	if m.sel.Y+m.sel.H > patternHeight {
+		m.sel.H = patternHeight - m.sel.Y
 	}
 }
 
@@ -195,7 +195,7 @@ func (m *model) DeleteLeft() {
 }
 
 func (m *model) SelectNone() {
-	m.selection = Rect{}
+	m.sel = Rect{}
 }
 
 func (m *model) SelectAll() {
@@ -203,7 +203,7 @@ func (m *model) SelectAll() {
 	patternHeight := len(p)
 	editRow := p[m.editY]
 	patternWidth := len(editRow) * 6
-	m.selection = Rect{0, 0, patternWidth, patternHeight}
+	m.sel = Rect{0, 0, patternWidth, patternHeight}
 }
 
 func (m *model) IncBrushWidth() {
