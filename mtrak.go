@@ -10,7 +10,7 @@ import (
 var program *tea.Program
 
 func main() {
-	m := &model{}
+	m := &AppModel{}
 	defer m.Close()
 	program = tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := program.Run(); err != nil {

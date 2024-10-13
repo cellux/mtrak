@@ -5,160 +5,25 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"math"
-	"slices"
 )
 
-const (
-	MaxUndoableActions = 64
-)
-
-type Row []MidiMessage
-type Pattern []Row
-
-func (p *Pattern) clone() Pattern {
-	clone := make(Pattern, len(*p))
-	for rowIndex := 0; rowIndex < len(*p); rowIndex++ {
-		clone[rowIndex] = slices.Clone((*p)[rowIndex])
-	}
-	return clone
+var defaultBrush = Brush{
+	Rect:      Rect{0, 0, 1, 1},
+	ExpandDir: Point{1, 1},
 }
 
-func (p *Pattern) getDigit(x, y int) byte {
-	row := (*p)[y]
-	msg := &row[x/6]
-	switch x % 6 {
-	case 0:
-		return msg[0] & 0xf0 >> 4
-	case 1:
-		return msg[0] & 0x0f
-	case 2:
-		return msg[1] & 0xf0 >> 4
-	case 3:
-		return msg[1] & 0x0f
-	case 4:
-		return msg[2] & 0xf0 >> 4
-	case 5:
-		return msg[2] & 0x0f
-	}
-	return 0
-}
-
-func (p *Pattern) setDigit(x, y int, b byte) {
-	row := (*p)[y]
-	msg := &row[x/6]
-	switch x % 6 {
-	case 0:
-		msg[0] = msg[0]&0x0f | (b << 4)
-	case 1:
-		msg[0] = msg[0]&0xf0 | (b & 0x0f)
-	case 2:
-		msg[1] = msg[1]&0x0f | (b << 4)
-	case 3:
-		msg[1] = msg[1]&0xf0 | (b & 0x0f)
-	case 4:
-		msg[2] = msg[2]&0x0f | (b << 4)
-	case 5:
-		msg[2] = msg[2]&0xf0 | (b & 0x0f)
-	}
-}
-
-type Rect struct {
-	X int
-	Y int
-	W int
-	H int
-}
-
-type Block [][]byte
-
-func (p *Pattern) getBlock(r Rect) Block {
-	result := make(Block, r.H)
-	for dy := 0; dy < r.H; dy++ {
-		result[dy] = make([]byte, r.W)
-		for dx := 0; dx < r.W; dx++ {
-			result[dy][dx] = p.getDigit(r.X+dx, r.Y+dy)
-		}
-	}
-	return result
-}
-
-func (p *Pattern) setBlock(r Rect, block Block) {
-	for dy := 0; dy < r.H; dy++ {
-		for dx := 0; dx < r.W; dx++ {
-			p.setDigit(r.X+dx, r.Y+dy, block[dy][dx])
-		}
-	}
-}
-
-func (p *Pattern) zeroBlock(r Rect) {
-	for dy := 0; dy < r.H; dy++ {
-		for dx := 0; dx < r.W; dx++ {
-			p.setDigit(r.X+dx, r.Y+dy, 0)
-		}
-	}
-}
-
-func (p *Pattern) copyBlock(r Rect, dx, dy int) {
-	block := p.getBlock(r)
-	p.setBlock(Rect{r.X + dx, r.Y + dy, r.W, r.H}, block)
-}
-
-const (
-	EditMode    = 0
-	CommandMode = 1
-)
-
-type Song struct {
-	BPM      int       `json:"bpm"` // beats per minute
-	LPB      int       `json:"lpb"` // lines per beat
-	TPL      int       `json:"tpl"` // ticks per line
-	Patterns []Pattern `json:"patterns"`
-}
-
-var defaultBrush = Rect{0, 0, 1, 1}
-
-type model struct {
-	err               error
-	keymap            *KeyMap
-	mode              int
-	windowWidth       int
-	windowHeight      int
-	me                *MidiEngine
-	song              *Song
-	brush             Rect
-	sel               Rect
-	editPattern       int
-	editX             int
-	editY             int
-	firstVisibleRow   int
-	firstVisibleTrack int
-	playPattern       int
-	playRow           int
-	playTick          int
-	playFrame         uint64
-	isPlaying         bool
-	playFromRow       int
-	commandModel      textinput.Model
-	filename          string
-	pendingActions    chan Action
-	msgs              chan tea.Msg
-	undoableActions   []Action
-	undoneActions     []Action
-}
-
-func (m *model) Reset() {
+func (m *AppModel) Reset() {
 	m.err = nil
 	//m.keymap = ?
 	m.mode = EditMode
-	//m.windowWidth
-	//m.windowHeight
+	//m.windowSize
 	//m.me
 	//m.song
 	m.brush = defaultBrush
 	m.sel = Rect{}
 	m.editPattern = 0
-	m.editX = 0
-	m.editY = 0
+	m.editPos.X = 0
+	m.editPos.Y = 0
 	m.firstVisibleRow = 0
 	m.firstVisibleTrack = 0
 	m.playPattern = 0
@@ -175,70 +40,68 @@ func (m *model) Reset() {
 	m.undoneActions = nil
 }
 
-func (m *model) SetError(err error) {
+func (m *AppModel) SetError(err error) {
 	m.err = err
 }
 
-func (m *model) CollapseBrush() {
-	m.brush.X = m.editX
-	m.brush.Y = m.editY
+func (m *AppModel) CollapseBrush() {
+	m.brush.X = m.editPos.X
+	m.brush.Y = m.editPos.Y
 	m.brush.W = 1
 	m.brush.H = 1
 }
 
-func (m *model) SetSong(song *Song) {
+func (m *AppModel) SetSong(song *Song) {
 	m.Reset()
 	m.song = song
 }
 
-func (m *model) ReplaceEditPattern(p Pattern) {
+func (m *AppModel) ReplaceEditPattern(p Pattern) {
 	m.song.Patterns[m.editPattern] = p
 	m.fix()
 }
 
-func (m *model) Play() {
+func (m *AppModel) Play() {
 	m.playTick = 0
 	m.isPlaying = true
 }
 
-func (m *model) Stop() {
+func (m *AppModel) Stop() {
 	m.isPlaying = false
 	m.playTick = 0
 }
 
-func (m *model) QuitWithError(err error) tea.Cmd {
+func (m *AppModel) QuitWithError(err error) tea.Cmd {
 	m.err = err
 	return tea.Quit
 }
 
-func (m *model) GetSampleRate() int {
+func (m *AppModel) GetSampleRate() int {
 	return int(m.me.client.GetSampleRate())
 }
 
-func (m *model) GetBeatsPerSecond() float64 {
+func (m *AppModel) GetBeatsPerSecond() float64 {
 	return float64(m.song.BPM) / 60.0
 }
 
-func (m *model) GetFramesPerBeat() int {
+func (m *AppModel) GetFramesPerBeat() int {
 	sr := float64(m.GetSampleRate())
 	bps := m.GetBeatsPerSecond()
 	return int(math.Round(sr / bps))
 }
 
-func (m *model) GetTicksPerBeat() int {
+func (m *AppModel) GetTicksPerBeat() int {
 	return m.song.TPL * m.song.LPB
 }
 
-func (m *model) GetFramesPerTick() int {
+func (m *AppModel) GetFramesPerTick() int {
 	sr := float64(m.GetSampleRate())
 	bps := m.GetBeatsPerSecond()
 	tpb := float64(m.GetTicksPerBeat())
 	return int(math.Round(sr / bps / tpb))
 }
 
-type redrawMsg struct{}
-
-func (m *model) Process(nframes uint32) int {
+func (m *AppModel) Process(nframes uint32) int {
 loop:
 	for {
 		select {
@@ -266,7 +129,7 @@ loop:
 					status := msg[0]
 					if status >= 0x80 {
 						midiData.Time = i
-						midiData.Buffer = msg[0:MidiMessageLength(status)]
+						midiData.Buffer = msg.bytes()
 						outPort.MidiEventWrite(&midiData, buf)
 					}
 				}
@@ -295,7 +158,7 @@ func makePattern(rowCount, trackCount int) Pattern {
 	return rows
 }
 
-func (m *model) Init() tea.Cmd {
+func (m *AppModel) Init() tea.Cmd {
 	m.keymap = &defaultKeyMap
 	m.me = &MidiEngine{}
 	if err := m.me.Open(m.Process); err != nil {
@@ -323,41 +186,41 @@ func (m *model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *model) getDigit() byte {
+func (m *AppModel) getDigit() byte {
 	p := m.song.Patterns[m.editPattern]
-	return p.getDigit(m.editX, m.editY)
+	return p.getDigit(m.editPos.X, m.editPos.Y)
 }
 
-func (m *model) setDigit(b byte) {
+func (m *AppModel) setDigit(b byte) {
 	p := m.song.Patterns[m.editPattern]
-	p.setDigit(m.editX, m.editY, b)
+	p.setDigit(m.editPos.X, m.editPos.Y, b)
 }
 
-func (m *model) insertDigit(b byte) {
+func (m *AppModel) insertDigit(b byte) {
 	m.setDigit(b)
 	m.Right()
 }
 
-func (m *model) getBlock() Block {
+func (m *AppModel) getBlock() Block {
 	p := m.song.Patterns[m.editPattern]
-	return p.getBlock(m.brush)
+	return p.getBlock(m.brush.Rect)
 }
 
-func (m *model) setBlock(block Block) {
+func (m *AppModel) setBlock(block Block) {
 	p := m.song.Patterns[m.editPattern]
-	p.setBlock(m.brush, block)
+	p.setBlock(m.brush.Rect, block)
 }
 
-func (m *model) zeroBlock() {
+func (m *AppModel) zeroBlock() {
 	p := m.song.Patterns[m.editPattern]
-	p.zeroBlock(m.brush)
+	p.zeroBlock(m.brush.Rect)
 }
 
-func (m *model) hasSelection() bool {
+func (m *AppModel) hasSelection() bool {
 	return m.sel.W > 0 && m.sel.H > 0
 }
 
-func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
@@ -377,8 +240,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.SelectNone()
 		}
 	case tea.WindowSizeMsg:
-		m.windowWidth = msg.Width
-		m.windowHeight = msg.Height
+		m.windowSize.W = msg.Width
+		m.windowSize.H = msg.Height
 	}
 	switch m.mode {
 	case EditMode:
@@ -479,7 +342,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *model) Close() error {
+func (m *AppModel) Close() error {
 	if m.me != nil {
 		m.me.Close()
 		m.me = nil

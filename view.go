@@ -45,7 +45,7 @@ func init() {
 
 const hexDigits = "0123456789ABCDEF"
 
-func (m *model) HeaderView() string {
+func (m *AppModel) HeaderView() string {
 	var rb RowBuilder
 	rb.WriteString("BPM: ")
 	rb.WriteString(fmt.Sprintf("%d", m.song.BPM))
@@ -95,7 +95,7 @@ func (m *model) HeaderView() string {
 	return rb.String()
 }
 
-func (m *model) PatternView(r Rect) string {
+func (m *AppModel) PatternView(r Rect) string {
 	p := m.song.Patterns[m.editPattern]
 	patternHeight := len(p)
 	var rb RowBuilder
@@ -111,17 +111,17 @@ func (m *model) PatternView(r Rect) string {
 	if numRows <= 0 || numCols <= 0 {
 		return ""
 	}
-	if m.editX < m.firstVisibleTrack*6 {
-		m.firstVisibleTrack = m.editX / 6
+	if m.brush.X < m.firstVisibleTrack*6 {
+		m.firstVisibleTrack = m.brush.X / 6
 	}
-	if m.editX >= m.firstVisibleTrack*6+numCols {
-		m.firstVisibleTrack = (m.editX - numCols) / 6
+	if m.brush.X+m.brush.W >= m.firstVisibleTrack*6+numCols {
+		m.firstVisibleTrack = (m.brush.X + m.brush.W - numCols) / 6
 	}
-	if m.editY < m.firstVisibleRow {
-		m.firstVisibleRow = m.editY
+	if m.brush.Y < m.firstVisibleRow {
+		m.firstVisibleRow = m.brush.Y
 	}
-	if m.editY >= m.firstVisibleRow+numRows {
-		m.firstVisibleRow = m.editY - numRows + 1
+	if m.brush.Y+m.brush.H >= m.firstVisibleRow+numRows {
+		m.firstVisibleRow = m.brush.Y + m.brush.H - numRows
 	}
 	rowStrings := make([]string, 0, numRows)
 	for y := m.firstVisibleRow; y < min(patternHeight, m.firstVisibleRow+numRows); y++ {
@@ -143,7 +143,7 @@ func (m *model) PatternView(r Rect) string {
 			for i := 0; i < 3; i++ {
 				for j := 0; j < 2; j++ {
 					cellStyleIndex := rowStyleIndex
-					if y == m.editY && x == m.editX {
+					if y == m.editPos.Y && x == m.editPos.X {
 						cellStyleIndex |= highlightBit
 					}
 					insideBrush := x >= m.brush.X &&
@@ -182,27 +182,27 @@ func (m *model) PatternView(r Rect) string {
 	return patternStyle.Render(lipgloss.JoinVertical(0, rowStrings...))
 }
 
-func (m *model) CommandView() string {
+func (m *AppModel) CommandView() string {
 	return m.commandModel.View()
 }
 
-func (m *model) ErrorView() string {
+func (m *AppModel) ErrorView() string {
 	errorStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#ffffff")).
 		Background(lipgloss.Color("#ff0000"))
 	return errorStyle.Render(fmt.Sprintf("%s", m.err))
 }
 
-func (m *model) View() string {
-	patternViewWidth := m.windowWidth
-	patternViewHeight := m.windowHeight - 1
+func (m *AppModel) View() string {
+	patternViewWidth := m.windowSize.W
+	patternViewHeight := m.windowSize.H - 1
 	if m.mode == CommandMode {
 		patternViewHeight--
 	}
 	if m.err != nil {
 		patternViewHeight--
 	}
-	if patternViewHeight <= 0 {
+	if patternViewWidth <= 0 || patternViewHeight <= 0 {
 		return ""
 	}
 	var views []string
