@@ -103,6 +103,51 @@ func (m *AppModel) HeaderView() string {
 func (m *AppModel) PatternView(r Rect) string {
 	p := m.song.Patterns[m.editPattern]
 	patternHeight := len(p)
+	editRow := p[m.editPos.Y]
+	patternWidth := len(editRow)
+	numRows := r.H
+	numRows -= 2 // borders
+	numCols := r.W
+	numCols -= 2 // borders
+	numCols -= 2 // padding
+	numCols -= 4 // row index
+	numCols -= 1 // row index gap
+	var maxVisibleTracks int
+	if numCols%7 == 6 {
+		maxVisibleTracks = (numCols + 1) / 7
+	} else {
+		maxVisibleTracks = numCols / 7
+	}
+	if numRows <= 0 || maxVisibleTracks < 1 {
+		return ""
+	}
+	visibleTracks := maxVisibleTracks
+	if visibleTracks > patternWidth {
+		visibleTracks = patternWidth
+	}
+	numCols = visibleTracks * 6
+	if m.brush.X < m.firstVisibleTrack*6 {
+		m.firstVisibleTrack = m.brush.X / 6
+	} else if m.brush.X+m.brush.W > m.firstVisibleTrack*6+numCols {
+		m.firstVisibleTrack = (m.brush.X + m.brush.W - numCols + 6) / 6
+	}
+	if m.firstVisibleTrack+visibleTracks > patternWidth {
+		m.firstVisibleTrack = patternWidth - visibleTracks
+	}
+	if m.firstVisibleTrack < 0 {
+		m.firstVisibleTrack = 0
+	}
+	if m.brush.Y < m.firstVisibleRow {
+		m.firstVisibleRow = m.brush.Y
+	} else if m.brush.Y+m.brush.H > m.firstVisibleRow+numRows {
+		m.firstVisibleRow = m.brush.Y + m.brush.H - numRows
+	}
+	if m.firstVisibleRow+numRows > patternHeight {
+		m.firstVisibleRow = patternHeight - numRows
+	}
+	if m.firstVisibleRow < 0 {
+		m.firstVisibleRow = 0
+	}
 	var rb RowBuilder
 	currentStyleIndex := BackgroundIndex
 	setStyle := func(index int) {
@@ -110,23 +155,6 @@ func (m *AppModel) PatternView(r Rect) string {
 			currentStyleIndex = index
 			rb.SetStyle(palette[currentStyleIndex])
 		}
-	}
-	numRows := r.H - 2         // borders
-	numCols := r.W - 2 - 4 - 1 // borders + row index + gap
-	if numRows <= 0 || numCols <= 0 {
-		return ""
-	}
-	if m.brush.X < m.firstVisibleTrack*6 {
-		m.firstVisibleTrack = m.brush.X / 6
-	}
-	if m.brush.X+m.brush.W >= m.firstVisibleTrack*6+numCols {
-		m.firstVisibleTrack = (m.brush.X + m.brush.W - numCols) / 6
-	}
-	if m.brush.Y < m.firstVisibleRow {
-		m.firstVisibleRow = m.brush.Y
-	}
-	if m.brush.Y+m.brush.H >= m.firstVisibleRow+numRows {
-		m.firstVisibleRow = m.brush.Y + m.brush.H - numRows
 	}
 	rowStrings := make([]string, 0, numRows)
 	for y := m.firstVisibleRow; y < min(patternHeight, m.firstVisibleRow+numRows); y++ {
@@ -138,8 +166,8 @@ func (m *AppModel) PatternView(r Rect) string {
 		if y == m.playRow {
 			rowStyleIndex |= playBit
 		}
-		x := 0
-		for t := m.firstVisibleTrack; t < len(row); t++ {
+		x := m.firstVisibleTrack * 6
+		for t := m.firstVisibleTrack; t < min(patternWidth, m.firstVisibleTrack+visibleTracks); t++ {
 			setStyle(rowStyleIndex)
 			if t > m.firstVisibleTrack {
 				rb.WriteByte(' ')
@@ -196,7 +224,7 @@ func (m *AppModel) PatternView(r Rect) string {
 		// padding + row index + gap
 		rb.WriteString(roundedBorder.Top)
 	}
-	for t := m.firstVisibleTrack; t < len(p[0]); t++ {
+	for t := m.firstVisibleTrack; t < min(patternWidth, m.firstVisibleTrack+visibleTracks); t++ {
 		if t > m.firstVisibleTrack {
 			rb.WriteString(roundedBorder.Top)
 		}
