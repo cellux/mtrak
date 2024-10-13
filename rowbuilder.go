@@ -43,5 +43,4 @@ func (rb *RowBuilder) String() string {
 func (rb *RowBuilder) Reset() {
 	rb.sb.Reset()
 	rb.group.Reset()
-	rb.style = lipgloss.NewStyle()
 }

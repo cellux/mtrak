@@ -20,7 +20,11 @@ const (
 	playBit      = 8
 )
 
-var patternStyles [16]lipgloss.Style
+var palette [17]lipgloss.Style
+
+const (
+	BackgroundIndex = 16
+)
 
 func init() {
 	for i := 0; i < 16; i++ {
@@ -39,8 +43,9 @@ func init() {
 		if i&playBit > 0 {
 			bg.g += 0x40
 		}
-		patternStyles[i] = patternStyles[i].Foreground(fg.LGC()).Background(bg.LGC())
+		palette[i] = lipgloss.Style{}.Foreground(fg.LGC()).Background(bg.LGC())
 	}
+	palette[BackgroundIndex] = lipgloss.Style{}
 }
 
 const hexDigits = "0123456789ABCDEF"
@@ -99,11 +104,11 @@ func (m *AppModel) PatternView(r Rect) string {
 	p := m.song.Patterns[m.editPattern]
 	patternHeight := len(p)
 	var rb RowBuilder
-	var currentStyleIndex int
+	currentStyleIndex := BackgroundIndex
 	setStyle := func(index int) {
 		if index != currentStyleIndex {
 			currentStyleIndex = index
-			rb.SetStyle(patternStyles[currentStyleIndex])
+			rb.SetStyle(palette[currentStyleIndex])
 		}
 	}
 	numRows := r.H - 2         // borders
@@ -126,7 +131,7 @@ func (m *AppModel) PatternView(r Rect) string {
 	rowStrings := make([]string, 0, numRows)
 	for y := m.firstVisibleRow; y < min(patternHeight, m.firstVisibleRow+numRows); y++ {
 		row := p[y]
-		setStyle(0)
+		setStyle(BackgroundIndex)
 		rb.WriteString(fmt.Sprintf("%04X", y))
 		rb.WriteByte(' ')
 		rowStyleIndex := 0
