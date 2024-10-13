@@ -183,8 +183,34 @@ func (m *AppModel) PatternView(r Rect) string {
 	}
 	patternStyle := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
+		BorderTop(false).
+		BorderRight(true).
+		BorderBottom(true).
+		BorderLeft(true).
 		Padding(0, 1)
-	return patternStyle.Render(lipgloss.JoinVertical(0, rowStrings...))
+	patternWithoutTopBorder := patternStyle.Render(lipgloss.JoinVertical(0, rowStrings...))
+	setStyle(BackgroundIndex)
+	roundedBorder := lipgloss.RoundedBorder()
+	rb.WriteString(roundedBorder.TopLeft)
+	for i := 0; i < 1+4+1; i++ {
+		// padding + row index + gap
+		rb.WriteString(roundedBorder.Top)
+	}
+	for t := m.firstVisibleTrack; t < len(p[0]); t++ {
+		if t > m.firstVisibleTrack {
+			rb.WriteString(roundedBorder.Top)
+		}
+		rb.WriteString(roundedBorder.Top)
+		rb.WriteString("╴")
+		rb.WriteString(fmt.Sprintf("%02X", t))
+		rb.WriteString("╶")
+		rb.WriteString(roundedBorder.Top)
+	}
+	rb.WriteString(roundedBorder.Top)
+	rb.WriteString(roundedBorder.TopRight)
+	topBorder := rb.String()
+	rb.Reset()
+	return lipgloss.JoinVertical(0, topBorder, patternWithoutTopBorder)
 }
 
 func (m *AppModel) CommandView() string {
