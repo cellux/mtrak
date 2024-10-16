@@ -280,6 +280,10 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.JumpToFirstRow()
 				case key.Matches(msg, m.keymap.JumpToLastRow):
 					m.JumpToLastRow()
+				case key.Matches(msg, m.keymap.JumpToTopLeft):
+					m.JumpToTopLeft()
+				case key.Matches(msg, m.keymap.JumpToBottomRight):
+					m.JumpToBottomRight()
 				case key.Matches(msg, m.keymap.Left):
 					m.Left()
 				case key.Matches(msg, m.keymap.Right):

@@ -146,6 +146,21 @@ func (m *AppModel) JumpToLastRow() {
 	m.moveBrush(0, patternHeight-m.brush.H-m.brush.Y)
 }
 
+func (m *AppModel) JumpToTopLeft() {
+	m.moveBrush(-m.brush.X, -m.brush.Y)
+}
+
+func (m *AppModel) JumpToBottomRight() {
+	p := m.song.Patterns[m.editPattern]
+	patternHeight := len(p)
+	editRow := p[m.editPos.Y]
+	patternWidth := len(editRow) * 6
+	m.moveBrush(
+		patternWidth-m.brush.W-m.brush.X,
+		patternHeight-m.brush.H-m.brush.Y,
+	)
+}
+
 func (m *AppModel) Left() {
 	m.moveBrush(-m.brush.W, 0)
 }

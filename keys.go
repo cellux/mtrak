@@ -5,33 +5,35 @@ import (
 )
 
 type KeyMap struct {
-	Quit           key.Binding
-	Up             key.Binding
-	Down           key.Binding
-	PageUp         key.Binding
-	PageDown       key.Binding
-	JumpToFirstRow key.Binding
-	JumpToLastRow  key.Binding
-	Left           key.Binding
-	Right          key.Binding
-	NextTrack      key.Binding
-	PrevTrack      key.Binding
-	InsertBlank    key.Binding
-	DeleteLeft     key.Binding
-	IncBrushWidth  key.Binding
-	DecBrushWidth  key.Binding
-	IncBrushHeight key.Binding
-	DecBrushHeight key.Binding
-	InsertBlockV   key.Binding
-	DeleteBlockV   key.Binding
-	InsertBlockH   key.Binding
-	DeleteBlockH   key.Binding
-	PlayOrStop     key.Binding
-	SetPlayFromRow key.Binding
-	EnterCommand   key.Binding
-	Undo           key.Binding
-	Redo           key.Binding
-	Save           key.Binding
+	Quit              key.Binding
+	Up                key.Binding
+	Down              key.Binding
+	PageUp            key.Binding
+	PageDown          key.Binding
+	JumpToFirstRow    key.Binding
+	JumpToLastRow     key.Binding
+	JumpToTopLeft     key.Binding
+	JumpToBottomRight key.Binding
+	Left              key.Binding
+	Right             key.Binding
+	NextTrack         key.Binding
+	PrevTrack         key.Binding
+	InsertBlank       key.Binding
+	DeleteLeft        key.Binding
+	IncBrushWidth     key.Binding
+	DecBrushWidth     key.Binding
+	IncBrushHeight    key.Binding
+	DecBrushHeight    key.Binding
+	InsertBlockV      key.Binding
+	DeleteBlockV      key.Binding
+	InsertBlockH      key.Binding
+	DeleteBlockH      key.Binding
+	PlayOrStop        key.Binding
+	SetPlayFromRow    key.Binding
+	EnterCommand      key.Binding
+	Undo              key.Binding
+	Redo              key.Binding
+	Save              key.Binding
 }
 
 var defaultKeyMap = KeyMap{
@@ -62,6 +64,14 @@ var defaultKeyMap = KeyMap{
 	JumpToLastRow: key.NewBinding(
 		key.WithKeys("end"),
 		key.WithHelp("end", "last row"),
+	),
+	JumpToTopLeft: key.NewBinding(
+		key.WithKeys("ctrl+home"),
+		key.WithHelp("C-home", "top left"),
+	),
+	JumpToBottomRight: key.NewBinding(
+		key.WithKeys("ctrl+end"),
+		key.WithHelp("C-end", "bottom right"),
 	),
 	Left: key.NewBinding(
 		key.WithKeys("left"),
