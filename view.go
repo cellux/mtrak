@@ -84,10 +84,10 @@ func (m *AppModel) HeaderView() string {
 	rb.WriteByte(' ')
 	rb.WriteString("SEL: ")
 	rb.WriteString(fmt.Sprintf("(%d,%d):(%d,%d)",
-		m.sel.X,
-		m.sel.Y,
-		m.sel.W,
-		m.sel.H,
+		m.selection.X,
+		m.selection.Y,
+		m.selection.W,
+		m.selection.H,
 	))
 	rb.WriteByte(' ')
 	rb.WriteString("BRU: ")
@@ -187,10 +187,10 @@ func (m *AppModel) PatternView(r Rect) string {
 						cellStyleIndex |= brushBit
 					}
 					insideSelection := m.hasSelection() &&
-						x >= m.sel.X &&
-						y >= m.sel.Y &&
-						x < (m.sel.X+m.sel.W) &&
-						y < (m.sel.Y+m.sel.H)
+						x >= m.selection.X &&
+						y >= m.selection.Y &&
+						x < (m.selection.X+m.selection.W) &&
+						y < (m.selection.Y+m.selection.H)
 					if insideSelection {
 						cellStyleIndex |= selectBit
 					}

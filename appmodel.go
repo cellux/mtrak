@@ -20,7 +20,7 @@ func (m *AppModel) Reset() {
 	//m.me
 	//m.song
 	m.brush = defaultBrush
-	m.sel = Rect{}
+	m.selection = Rect{}
 	m.editPattern = 0
 	m.editPos.X = 0
 	m.editPos.Y = 0
@@ -217,7 +217,7 @@ func (m *AppModel) zeroBlock() {
 }
 
 func (m *AppModel) hasSelection() bool {
-	return m.sel.W > 0 && m.sel.H > 0
+	return m.selection.W > 0 && m.selection.H > 0
 }
 
 func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

@@ -57,7 +57,7 @@ type AppModel struct {
 	me                *MidiEngine
 	song              *Song
 	brush             Brush
-	sel               Rect
+	selection         Rect
 	editPattern       int
 	editPos           Point
 	firstVisibleRow   int

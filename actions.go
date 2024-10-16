@@ -59,23 +59,23 @@ func (m *AppModel) fix() {
 	}
 
 	// fix selection
-	if m.sel.X < 0 || m.sel.X >= patternWidth {
+	if m.selection.X < 0 || m.selection.X >= patternWidth {
 		m.SelectNone()
 	}
-	if m.sel.Y < 0 || m.sel.Y >= patternHeight {
+	if m.selection.Y < 0 || m.selection.Y >= patternHeight {
 		m.SelectNone()
 	}
-	if m.sel.W > patternWidth {
-		m.sel.W = patternWidth
+	if m.selection.W > patternWidth {
+		m.selection.W = patternWidth
 	}
-	if m.sel.X+m.sel.W > patternWidth {
-		m.sel.X = patternWidth - m.sel.W
+	if m.selection.X+m.selection.W > patternWidth {
+		m.selection.X = patternWidth - m.selection.W
 	}
-	if m.sel.H > patternHeight {
-		m.sel.H = patternHeight
+	if m.selection.H > patternHeight {
+		m.selection.H = patternHeight
 	}
-	if m.sel.Y+m.sel.H > patternHeight {
-		m.sel.Y = patternHeight - m.sel.H
+	if m.selection.Y+m.selection.H > patternHeight {
+		m.selection.Y = patternHeight - m.selection.H
 	}
 }
 
@@ -215,7 +215,7 @@ func (m *AppModel) DeleteLeft() {
 }
 
 func (m *AppModel) SelectNone() {
-	m.sel = Rect{}
+	m.selection = Rect{}
 }
 
 func (m *AppModel) SelectAll() {
@@ -223,7 +223,7 @@ func (m *AppModel) SelectAll() {
 	patternHeight := len(p)
 	editRow := p[m.editPos.Y]
 	patternWidth := len(editRow) * 6
-	m.sel = Rect{0, 0, patternWidth, patternHeight}
+	m.selection = Rect{0, 0, patternWidth, patternHeight}
 }
 
 func (m *AppModel) stepBrushWidth(expandDir int) {
