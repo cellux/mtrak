@@ -49,7 +49,7 @@ type Action struct {
 	undoFn ActionFunction
 }
 
-type AppModel struct {
+type Model struct {
 	err               error
 	keymap            *KeyMap
 	mode              int

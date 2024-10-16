@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (m *AppModel) ExecuteCommand(command string) {
+func (m *Model) ExecuteCommand(command string) {
 	items := strings.Fields(command)
 	if len(items) == 0 {
 		return

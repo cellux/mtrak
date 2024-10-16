@@ -12,7 +12,7 @@ var defaultBrush = Brush{
 	ExpandDir: Point{1, 1},
 }
 
-func (m *AppModel) Reset() {
+func (m *Model) Reset() {
 	m.err = nil
 	//m.keymap = ?
 	m.mode = EditMode
@@ -40,68 +40,68 @@ func (m *AppModel) Reset() {
 	m.undoneActions = nil
 }
 
-func (m *AppModel) SetError(err error) {
+func (m *Model) SetError(err error) {
 	m.err = err
 }
 
-func (m *AppModel) CollapseBrush() {
+func (m *Model) CollapseBrush() {
 	m.brush.X = m.editPos.X
 	m.brush.Y = m.editPos.Y
 	m.brush.W = 1
 	m.brush.H = 1
 }
 
-func (m *AppModel) SetSong(song *Song) {
+func (m *Model) SetSong(song *Song) {
 	m.Reset()
 	m.song = song
 }
 
-func (m *AppModel) ReplaceEditPattern(p Pattern) {
+func (m *Model) ReplaceEditPattern(p Pattern) {
 	m.song.Patterns[m.editPattern] = p
 	m.fix()
 }
 
-func (m *AppModel) Play() {
+func (m *Model) Play() {
 	m.playTick = 0
 	m.isPlaying = true
 }
 
-func (m *AppModel) Stop() {
+func (m *Model) Stop() {
 	m.isPlaying = false
 	m.playTick = 0
 }
 
-func (m *AppModel) QuitWithError(err error) tea.Cmd {
+func (m *Model) QuitWithError(err error) tea.Cmd {
 	m.err = err
 	return tea.Quit
 }
 
-func (m *AppModel) GetSampleRate() int {
+func (m *Model) GetSampleRate() int {
 	return int(m.me.client.GetSampleRate())
 }
 
-func (m *AppModel) GetBeatsPerSecond() float64 {
+func (m *Model) GetBeatsPerSecond() float64 {
 	return float64(m.song.BPM) / 60.0
 }
 
-func (m *AppModel) GetFramesPerBeat() int {
+func (m *Model) GetFramesPerBeat() int {
 	sr := float64(m.GetSampleRate())
 	bps := m.GetBeatsPerSecond()
 	return int(math.Round(sr / bps))
 }
 
-func (m *AppModel) GetTicksPerBeat() int {
+func (m *Model) GetTicksPerBeat() int {
 	return m.song.TPL * m.song.LPB
 }
 
-func (m *AppModel) GetFramesPerTick() int {
+func (m *Model) GetFramesPerTick() int {
 	sr := float64(m.GetSampleRate())
 	bps := m.GetBeatsPerSecond()
 	tpb := float64(m.GetTicksPerBeat())
 	return int(math.Round(sr / bps / tpb))
 }
 
-func (m *AppModel) Process(nframes uint32) int {
+func (m *Model) Process(nframes uint32) int {
 loop:
 	for {
 		select {
@@ -158,7 +158,7 @@ func makePattern(rowCount, trackCount int) Pattern {
 	return rows
 }
 
-func (m *AppModel) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	m.keymap = &defaultKeyMap
 	m.me = &MidiEngine{}
 	if err := m.me.Open(m.Process); err != nil {
@@ -186,41 +186,41 @@ func (m *AppModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m *AppModel) getDigit() byte {
+func (m *Model) getDigit() byte {
 	p := m.song.Patterns[m.editPattern]
 	return p.getDigit(m.editPos.X, m.editPos.Y)
 }
 
-func (m *AppModel) setDigit(b byte) {
+func (m *Model) setDigit(b byte) {
 	p := m.song.Patterns[m.editPattern]
 	p.setDigit(m.editPos.X, m.editPos.Y, b)
 }
 
-func (m *AppModel) insertDigit(b byte) {
+func (m *Model) insertDigit(b byte) {
 	m.setDigit(b)
 	m.Right()
 }
 
-func (m *AppModel) getBlock() Block {
+func (m *Model) getBlock() Block {
 	p := m.song.Patterns[m.editPattern]
 	return p.getBlock(m.brush.Rect)
 }
 
-func (m *AppModel) setBlock(block Block) {
+func (m *Model) setBlock(block Block) {
 	p := m.song.Patterns[m.editPattern]
 	p.setBlock(m.brush.Rect, block)
 }
 
-func (m *AppModel) zeroBlock() {
+func (m *Model) zeroBlock() {
 	p := m.song.Patterns[m.editPattern]
 	p.zeroBlock(m.brush.Rect)
 }
 
-func (m *AppModel) hasSelection() bool {
+func (m *Model) hasSelection() bool {
 	return m.selection.W > 0 && m.selection.H > 0
 }
 
-func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
@@ -346,7 +346,7 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *AppModel) Close() error {
+func (m *Model) Close() error {
 	if m.me != nil {
 		m.me.Close()
 		m.me = nil

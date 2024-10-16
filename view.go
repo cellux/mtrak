@@ -50,7 +50,7 @@ func init() {
 
 const hexDigits = "0123456789ABCDEF"
 
-func (m *AppModel) HeaderView() string {
+func (m *Model) HeaderView() string {
 	var rb RowBuilder
 	rb.WriteString("BPM: ")
 	rb.WriteString(fmt.Sprintf("%d", m.song.BPM))
@@ -100,7 +100,7 @@ func (m *AppModel) HeaderView() string {
 	return rb.String()
 }
 
-func (m *AppModel) PatternView(r Rect) string {
+func (m *Model) PatternView(r Rect) string {
 	p := m.song.Patterns[m.editPattern]
 	patternHeight := len(p)
 	editRow := p[m.editPos.Y]
@@ -241,18 +241,18 @@ func (m *AppModel) PatternView(r Rect) string {
 	return lipgloss.JoinVertical(0, topBorder, patternWithoutTopBorder)
 }
 
-func (m *AppModel) CommandView() string {
+func (m *Model) CommandView() string {
 	return m.commandModel.View()
 }
 
-func (m *AppModel) ErrorView() string {
+func (m *Model) ErrorView() string {
 	errorStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#ffffff")).
 		Background(lipgloss.Color("#ff0000"))
 	return errorStyle.Render(fmt.Sprintf("%s", m.err))
 }
 
-func (m *AppModel) View() string {
+func (m *Model) View() string {
 	patternViewWidth := m.windowSize.W
 	patternViewHeight := m.windowSize.H - 1
 	if m.mode == CommandMode {
