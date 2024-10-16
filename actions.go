@@ -39,43 +39,23 @@ func (m *Model) fix() {
 	}
 
 	// fix brush
-	if m.brush.X < 0 || m.brush.X >= patternWidth {
-		m.CollapseBrush()
-	}
-	if m.brush.Y < 0 || m.brush.Y >= patternHeight {
-		m.CollapseBrush()
-	}
 	if m.brush.W > patternWidth {
 		m.brush.W = patternWidth
 	}
 	if m.brush.X+m.brush.W > patternWidth {
 		m.brush.X = patternWidth - m.brush.W
 	}
+	if m.brush.X < 0 || m.brush.X >= patternWidth {
+		m.CollapseBrush()
+	}
 	if m.brush.H > patternHeight {
-		m.brush.W = patternHeight
+		m.brush.H = patternHeight
 	}
 	if m.brush.Y+m.brush.H > patternHeight {
 		m.brush.Y = patternHeight - m.brush.H
 	}
-
-	// fix selection
-	if m.selection.X < 0 || m.selection.X >= patternWidth {
-		m.SelectNone()
-	}
-	if m.selection.Y < 0 || m.selection.Y >= patternHeight {
-		m.SelectNone()
-	}
-	if m.selection.W > patternWidth {
-		m.selection.W = patternWidth
-	}
-	if m.selection.X+m.selection.W > patternWidth {
-		m.selection.X = patternWidth - m.selection.W
-	}
-	if m.selection.H > patternHeight {
-		m.selection.H = patternHeight
-	}
-	if m.selection.Y+m.selection.H > patternHeight {
-		m.selection.Y = patternHeight - m.selection.H
+	if m.brush.Y < 0 || m.brush.Y >= patternHeight {
+		m.CollapseBrush()
 	}
 }
 
@@ -214,97 +194,130 @@ func (m *Model) DeleteLeft() {
 	}
 }
 
-func (m *Model) SelectNone() {
-	m.selection = Rect{}
-}
-
-func (m *Model) SelectAll() {
-	p := m.song.Patterns[m.editPattern]
-	patternHeight := len(p)
-	editRow := p[m.editPos.Y]
-	patternWidth := len(editRow) * 6
-	m.selection = Rect{0, 0, patternWidth, patternHeight}
-}
-
-func (m *Model) stepBrushWidth(expandDir int) {
+func (m *Model) stepBrushWidthExp(expandDir int) {
 	p := m.song.Patterns[m.editPattern]
 	editRow := p[m.editPos.Y]
 	patternWidth := len(editRow) * 6
 	if expandDir == m.brush.ExpandDir.X {
-		switch m.brush.W {
-		case 1:
-			m.brush.X = m.editPos.X - (m.editPos.X % 2)
+		switch {
+		case m.brush.W < 2:
 			m.brush.W = 2
-		case 2:
-			m.brush.X = m.editPos.X - (m.editPos.X % 6)
+		case m.brush.W < 6:
 			m.brush.W = 6
-		case 6:
-			m.brush.X = 0
+		default:
 			m.brush.W = patternWidth
 		}
 	} else {
-		switch m.brush.W {
-		case patternWidth:
-			m.brush.X = m.editPos.X - (m.editPos.X % 6)
+		switch {
+		case m.brush.W > 6:
 			m.brush.W = 6
-		case 6:
-			m.brush.X = m.editPos.X - (m.editPos.X % 2)
+		case m.brush.W > 2:
 			m.brush.W = 2
-		case 2:
-			m.brush.X = m.editPos.X
+		case m.brush.W == 2:
 			m.brush.W = 1
-		case 1:
-			m.brush.X = m.editPos.X - (m.editPos.X % 2)
+		default:
 			m.brush.W = 2
 			m.brush.ExpandDir.X = expandDir
 		}
 	}
-	m.SelectNone()
+	m.brush.X = m.editPos.X - (m.editPos.X % m.brush.W)
 }
 
-func (m *Model) IncBrushWidth() {
-	m.stepBrushWidth(1)
+func (m *Model) IncBrushWidthExp() {
+	m.stepBrushWidthExp(1)
 }
 
-func (m *Model) DecBrushWidth() {
-	m.stepBrushWidth(-1)
+func (m *Model) DecBrushWidthExp() {
+	m.stepBrushWidthExp(-1)
 }
 
-func (m *Model) stepBrushHeight(expandDir int) {
+func (m *Model) stepBrushHeightExp(expandDir int) {
 	p := m.song.Patterns[m.editPattern]
 	patternHeight := len(p)
 	if expandDir == m.brush.ExpandDir.Y {
-		switch m.brush.H {
-		case 1:
-			m.brush.Y = m.editPos.Y - (m.editPos.Y % m.song.LPB)
+		switch {
+		case m.brush.H < m.song.LPB:
 			m.brush.H = m.song.LPB
-		case m.song.LPB:
-			m.brush.Y = 0
+		default:
 			m.brush.H = patternHeight
 		}
 	} else {
-		switch m.brush.H {
-		case patternHeight:
-			m.brush.Y = m.editPos.Y - (m.editPos.Y % m.song.LPB)
+		switch {
+		case m.brush.H > m.song.LPB:
 			m.brush.H = m.song.LPB
-		case m.song.LPB:
-			m.brush.Y = m.editPos.Y
+		case m.brush.H > 1:
 			m.brush.H = 1
-		case 1:
-			m.brush.Y = m.editPos.Y - (m.editPos.Y % m.song.LPB)
+		default:
 			m.brush.H = m.song.LPB
 			m.brush.ExpandDir.Y = expandDir
 		}
 	}
-	m.SelectNone()
+	m.brush.Y = m.editPos.Y - (m.editPos.Y % m.brush.H)
 }
 
-func (m *Model) IncBrushHeight() {
-	m.stepBrushHeight(1)
+func (m *Model) IncBrushHeightExp() {
+	m.stepBrushHeightExp(1)
 }
 
-func (m *Model) DecBrushHeight() {
-	m.stepBrushHeight(-1)
+func (m *Model) DecBrushHeightExp() {
+	m.stepBrushHeightExp(-1)
+}
+
+func (m *Model) IncBrushWidthLin() {
+	p := m.song.Patterns[m.editPattern]
+	editRow := p[m.editPos.Y]
+	patternWidth := len(editRow) * 6
+	brushWidthAdd := 0
+	switch {
+	case m.brush.W < 2:
+		brushWidthAdd = 1
+	case m.brush.W < 6:
+		brushWidthAdd = 2
+	default:
+		brushWidthAdd = 6
+	}
+	if m.brush.X+m.brush.W+brushWidthAdd <= patternWidth {
+		m.brush.W += brushWidthAdd
+	}
+}
+
+func (m *Model) DecBrushWidthLin() {
+	brushWidthAdd := 0
+	switch {
+	case m.brush.W > 6:
+		brushWidthAdd = -6
+	case m.brush.W > 2:
+		brushWidthAdd = -2
+	case m.brush.W == 2:
+		brushWidthAdd = -1
+	}
+	m.brush.W += brushWidthAdd
+}
+
+func (m *Model) IncBrushHeightLin() {
+	p := m.song.Patterns[m.editPattern]
+	patternHeight := len(p)
+	brushHeightAdd := 0
+	switch {
+	case m.brush.H < m.song.LPB:
+		brushHeightAdd = 1
+	default:
+		brushHeightAdd = m.song.LPB
+	}
+	if m.brush.Y+m.brush.H+brushHeightAdd <= patternHeight {
+		m.brush.H += brushHeightAdd
+	}
+}
+
+func (m *Model) DecBrushHeightLin() {
+	brushHeightAdd := 0
+	switch {
+	case m.brush.H > m.song.LPB:
+		brushHeightAdd = -m.song.LPB
+	case m.brush.H > 1:
+		brushHeightAdd = -1
+	}
+	m.brush.H += brushHeightAdd
 }
 
 func (m *Model) InsertBlockV() {

@@ -20,10 +20,14 @@ type KeyMap struct {
 	PrevTrack         key.Binding
 	InsertBlank       key.Binding
 	DeleteLeft        key.Binding
-	IncBrushWidth     key.Binding
-	DecBrushWidth     key.Binding
-	IncBrushHeight    key.Binding
-	DecBrushHeight    key.Binding
+	IncBrushWidthExp  key.Binding
+	DecBrushWidthExp  key.Binding
+	IncBrushHeightExp key.Binding
+	DecBrushHeightExp key.Binding
+	IncBrushWidthLin  key.Binding
+	DecBrushWidthLin  key.Binding
+	IncBrushHeightLin key.Binding
+	DecBrushHeightLin key.Binding
 	InsertBlockV      key.Binding
 	DeleteBlockV      key.Binding
 	InsertBlockH      key.Binding
@@ -97,21 +101,37 @@ var defaultKeyMap = KeyMap{
 		key.WithKeys("backspace"),
 		key.WithHelp("backspace", "delete left"),
 	),
-	IncBrushWidth: key.NewBinding(
+	IncBrushWidthExp: key.NewBinding(
 		key.WithKeys("ctrl+right"),
-		key.WithHelp("C-right", "increase brush width"),
+		key.WithHelp("C-right", "increase brush width (exp)"),
 	),
-	DecBrushWidth: key.NewBinding(
+	DecBrushWidthExp: key.NewBinding(
 		key.WithKeys("ctrl+left"),
-		key.WithHelp("C-left", "decrease brush width"),
+		key.WithHelp("C-left", "decrease brush width (exp)"),
 	),
-	IncBrushHeight: key.NewBinding(
+	IncBrushHeightExp: key.NewBinding(
 		key.WithKeys("ctrl+down"),
-		key.WithHelp("C-down", "increase brush height"),
+		key.WithHelp("C-down", "increase brush height (exp)"),
 	),
-	DecBrushHeight: key.NewBinding(
+	DecBrushHeightExp: key.NewBinding(
 		key.WithKeys("ctrl+up"),
-		key.WithHelp("C-up", "decrease brush height"),
+		key.WithHelp("C-up", "decrease brush height (exp)"),
+	),
+	IncBrushWidthLin: key.NewBinding(
+		key.WithKeys("shift+right"),
+		key.WithHelp("S-right", "increase brush width (lin)"),
+	),
+	DecBrushWidthLin: key.NewBinding(
+		key.WithKeys("shift+left"),
+		key.WithHelp("S-left", "decrease brush width (lin)"),
+	),
+	IncBrushHeightLin: key.NewBinding(
+		key.WithKeys("shift+down"),
+		key.WithHelp("S-down", "increase brush height (lin)"),
+	),
+	DecBrushHeightLin: key.NewBinding(
+		key.WithKeys("shift+up"),
+		key.WithHelp("S-up", "decrease brush height (lin)"),
 	),
 	InsertBlockV: key.NewBinding(
 		key.WithKeys("insert", "ctrl+shift+down"),

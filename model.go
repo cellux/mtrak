@@ -20,7 +20,6 @@ func (m *Model) Reset() {
 	//m.me
 	//m.song
 	m.brush = defaultBrush
-	m.selection = Rect{}
 	m.editPattern = 0
 	m.editPos.X = 0
 	m.editPos.Y = 0
@@ -216,10 +215,6 @@ func (m *Model) zeroBlock() {
 	p.zeroBlock(m.brush.Rect)
 }
 
-func (m *Model) hasSelection() bool {
-	return m.selection.W > 0 && m.selection.H > 0
-}
-
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
@@ -237,7 +232,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc":
 			m.err = nil
 			m.CollapseBrush()
-			m.SelectNone()
 		}
 	case tea.WindowSizeMsg:
 		m.windowSize.W = msg.Width
@@ -296,14 +290,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.InsertBlank()
 				case key.Matches(msg, m.keymap.DeleteLeft):
 					m.DeleteLeft()
-				case key.Matches(msg, m.keymap.IncBrushWidth):
-					m.IncBrushWidth()
-				case key.Matches(msg, m.keymap.DecBrushWidth):
-					m.DecBrushWidth()
-				case key.Matches(msg, m.keymap.IncBrushHeight):
-					m.IncBrushHeight()
-				case key.Matches(msg, m.keymap.DecBrushHeight):
-					m.DecBrushHeight()
+				case key.Matches(msg, m.keymap.IncBrushWidthExp):
+					m.IncBrushWidthExp()
+				case key.Matches(msg, m.keymap.DecBrushWidthExp):
+					m.DecBrushWidthExp()
+				case key.Matches(msg, m.keymap.IncBrushHeightExp):
+					m.IncBrushHeightExp()
+				case key.Matches(msg, m.keymap.DecBrushHeightExp):
+					m.DecBrushHeightExp()
+				case key.Matches(msg, m.keymap.IncBrushWidthLin):
+					m.IncBrushWidthLin()
+				case key.Matches(msg, m.keymap.DecBrushWidthLin):
+					m.DecBrushWidthLin()
+				case key.Matches(msg, m.keymap.IncBrushHeightLin):
+					m.IncBrushHeightLin()
+				case key.Matches(msg, m.keymap.DecBrushHeightLin):
+					m.DecBrushHeightLin()
 				case key.Matches(msg, m.keymap.InsertBlockV):
 					m.InsertBlockV()
 				case key.Matches(msg, m.keymap.DeleteBlockV):

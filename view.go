@@ -82,14 +82,6 @@ func (m *Model) HeaderView() string {
 	rb.WriteString("playFrame: ")
 	rb.WriteString(fmt.Sprintf("%v", m.playFrame))
 	rb.WriteByte(' ')
-	rb.WriteString("SEL: ")
-	rb.WriteString(fmt.Sprintf("(%d,%d):(%d,%d)",
-		m.selection.X,
-		m.selection.Y,
-		m.selection.W,
-		m.selection.H,
-	))
-	rb.WriteByte(' ')
 	rb.WriteString("BRU: ")
 	rb.WriteString(fmt.Sprintf("(%d,%d):(%d,%d)",
 		m.brush.X,
@@ -121,15 +113,13 @@ func (m *Model) PatternView(r Rect) string {
 	if numRows <= 0 || maxVisibleTracks < 1 {
 		return ""
 	}
-	visibleTracks := maxVisibleTracks
-	if visibleTracks > patternWidth {
-		visibleTracks = patternWidth
-	}
+	visibleTracks := min(maxVisibleTracks, patternWidth)
 	numCols = visibleTracks * 6
+	if m.brush.X+m.brush.W > m.firstVisibleTrack*6+numCols {
+		m.firstVisibleTrack = (m.brush.X + m.brush.W - numCols + 6) / 6
+	}
 	if m.brush.X < m.firstVisibleTrack*6 {
 		m.firstVisibleTrack = m.brush.X / 6
-	} else if m.brush.X+m.brush.W > m.firstVisibleTrack*6+numCols {
-		m.firstVisibleTrack = (m.brush.X + m.brush.W - numCols + 6) / 6
 	}
 	if m.firstVisibleTrack+visibleTracks > patternWidth {
 		m.firstVisibleTrack = patternWidth - visibleTracks
@@ -137,10 +127,11 @@ func (m *Model) PatternView(r Rect) string {
 	if m.firstVisibleTrack < 0 {
 		m.firstVisibleTrack = 0
 	}
+	if m.brush.Y+m.brush.H > m.firstVisibleRow+numRows {
+		m.firstVisibleRow = m.brush.Y + m.brush.H - numRows
+	}
 	if m.brush.Y < m.firstVisibleRow {
 		m.firstVisibleRow = m.brush.Y
-	} else if m.brush.Y+m.brush.H > m.firstVisibleRow+numRows {
-		m.firstVisibleRow = m.brush.Y + m.brush.H - numRows
 	}
 	if m.firstVisibleRow+numRows > patternHeight {
 		m.firstVisibleRow = patternHeight - numRows
@@ -185,14 +176,6 @@ func (m *Model) PatternView(r Rect) string {
 						y < (m.brush.Y+m.brush.H)
 					if insideBrush {
 						cellStyleIndex |= brushBit
-					}
-					insideSelection := m.hasSelection() &&
-						x >= m.selection.X &&
-						y >= m.selection.Y &&
-						x < (m.selection.X+m.selection.W) &&
-						y < (m.selection.Y+m.selection.H)
-					if insideSelection {
-						cellStyleIndex |= selectBit
 					}
 					setStyle(cellStyleIndex)
 					b := msg[i]

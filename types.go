@@ -57,7 +57,6 @@ type Model struct {
 	me                *MidiEngine
 	song              *Song
 	brush             Brush
-	selection         Rect
 	editPattern       int
 	editPos           Point
 	firstVisibleRow   int
