@@ -35,13 +35,13 @@ func init() {
 			bg = Color{0x80, 0x80, 0x80}
 		}
 		if i&selectBit > 0 {
-			bg.r += 0x40
+			bg.r += 0x60
 		}
 		if i&brushBit > 0 {
-			bg.b += 0x40
+			bg.b += 0x60
 		}
 		if i&playBit > 0 {
-			bg.g += 0x40
+			bg.g += 0x10
 		}
 		palette[i] = lipgloss.Style{}.Foreground(fg.LGC()).Background(bg.LGC())
 	}
