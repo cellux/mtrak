@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+func parseInt(s string) (int, error) {
+	i, err := strconv.ParseInt(s, 0, 0)
+	return int(i), err
+}
+
 func (m *Model) ExecuteCommand(command string) {
 	items := strings.Fields(command)
 	if len(items) == 0 {
@@ -25,7 +30,7 @@ func (m *Model) ExecuteCommand(command string) {
 		m.SaveSong()
 	case "bpm":
 		if len(items) > 1 {
-			bpm, err := strconv.Atoi(items[1])
+			bpm, err := parseInt(items[1])
 			if err != nil {
 				m.SetError(err)
 				return
@@ -38,7 +43,7 @@ func (m *Model) ExecuteCommand(command string) {
 		}
 	case "lpb":
 		if len(items) > 1 {
-			lpb, err := strconv.Atoi(items[1])
+			lpb, err := parseInt(items[1])
 			if err != nil {
 				m.SetError(err)
 				return
@@ -51,7 +56,7 @@ func (m *Model) ExecuteCommand(command string) {
 		}
 	case "tpl":
 		if len(items) > 1 {
-			tpl, err := strconv.Atoi(items[1])
+			tpl, err := parseInt(items[1])
 			if err != nil {
 				m.SetError(err)
 				return
@@ -64,7 +69,7 @@ func (m *Model) ExecuteCommand(command string) {
 		}
 	case "rows":
 		if len(items) > 1 {
-			rows, err := strconv.Atoi(items[1])
+			rows, err := parseInt(items[1])
 			if err != nil {
 				m.SetError(err)
 				return
@@ -98,7 +103,7 @@ func (m *Model) ExecuteCommand(command string) {
 		}
 	case "tracks":
 		if len(items) > 1 {
-			tracks, err := strconv.Atoi(items[1])
+			tracks, err := parseInt(items[1])
 			if err != nil {
 				m.SetError(err)
 				return
