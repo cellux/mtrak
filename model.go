@@ -175,11 +175,8 @@ func (m *Model) Init() tea.Cmd {
 	m.msgs = make(chan tea.Msg, 64)
 	m.Reset()
 	go func() {
-		for {
-			select {
-			case msg := <-m.msgs:
-				program.Send(msg)
-			}
+		for msg := range m.msgs {
+			program.Send(msg)
 		}
 	}()
 	return nil

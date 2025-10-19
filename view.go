@@ -27,7 +27,7 @@ const (
 )
 
 func init() {
-	for i := 0; i < 16; i++ {
+	for i := range 16 {
 		fg := Color{0xcc, 0xcc, 0xcc}
 		bg := Color{0x20, 0x20, 0x20}
 		if i&highlightBit > 0 {
@@ -164,8 +164,8 @@ func (m *Model) PatternView(r Rect) string {
 				rb.WriteByte(' ')
 			}
 			msg := row[t]
-			for i := 0; i < 3; i++ {
-				for j := 0; j < 2; j++ {
+			for i := range 3 {
+				for j := range 2 {
 					cellStyleIndex := rowStyleIndex
 					if y == m.editPos.Y && x == m.editPos.X {
 						cellStyleIndex |= highlightBit
@@ -203,7 +203,7 @@ func (m *Model) PatternView(r Rect) string {
 	setStyle(BackgroundIndex)
 	roundedBorder := lipgloss.RoundedBorder()
 	rb.WriteString(roundedBorder.TopLeft)
-	for i := 0; i < 1+4+1; i++ {
+	for range 1 + 4 + 1 {
 		// padding + row index + gap
 		rb.WriteString(roundedBorder.Top)
 	}

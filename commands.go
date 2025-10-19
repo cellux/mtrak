@@ -114,11 +114,11 @@ func (m *Model) ExecuteCommand(command string) {
 			}
 			clone := p.clone()
 			if tracks < currentTrackCount {
-				for i := 0; i < len(clone); i++ {
+				for i := range len(clone) {
 					clone[i] = clone[i][:tracks]
 				}
 			} else {
-				for i := 0; i < len(clone); i++ {
+				for i := range len(clone) {
 					clone[i] = slices.Grow(clone[i], tracks-currentTrackCount)
 					for j := 0; j < tracks-currentTrackCount; j++ {
 						clone[i] = append(clone[i], MidiMessage{})
