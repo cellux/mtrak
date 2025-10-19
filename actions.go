@@ -422,6 +422,72 @@ func (m *Model) DeleteBlockH() {
 	)
 }
 
+func (m *Model) Cut() {
+	m.submitAction(
+		func() {
+			m.clipboard = m.getBlock()
+			m.zeroBlock()
+		},
+		func() {
+			m.setBlock(m.clipboard)
+		},
+	)
+}
+
+func (m *Model) Copy() {
+	m.submitAction(
+		func() {
+			m.clipboard = m.getBlock()
+		},
+		nil,
+	)
+}
+
+func (m *Model) pasteBlock(block Block) (prevBlock Block) {
+	if block == nil {
+		return
+	}
+	blockH := len(block)
+	if blockH == 0 {
+		return
+	}
+	blockW := len(block[0])
+	if blockW == 0 {
+		return
+	}
+	p := m.song.Patterns[m.editPattern]
+	patternHeight := len(p)
+	editRow := p[m.editPos.Y]
+	patternWidth := len(editRow) * 6
+	rect := Rect{
+		X: m.editPos.X,
+		Y: m.editPos.Y,
+		W: blockW,
+		H: blockH,
+	}
+	if rect.X+rect.W > patternWidth {
+		rect.W = patternWidth - rect.X
+	}
+	if rect.Y+rect.H > patternHeight {
+		rect.H = patternHeight - rect.Y
+	}
+	prevBlock = p.getBlock(rect)
+	p.setBlock(rect, block)
+	return prevBlock
+}
+
+func (m *Model) Paste() {
+	var prevBlock Block
+	m.submitAction(
+		func() {
+			prevBlock = m.pasteBlock(m.clipboard)
+		},
+		func() {
+			m.pasteBlock(prevBlock)
+		},
+	)
+}
+
 func (m *Model) PlayOrStop() {
 	m.submitAction(
 		func() {

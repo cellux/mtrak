@@ -73,6 +73,7 @@ type Model struct {
 	msgs              chan tea.Msg
 	undoableActions   []Action
 	undoneActions     []Action
+	clipboard         Block
 }
 
 type (

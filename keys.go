@@ -33,6 +33,9 @@ type KeyMap struct {
 	InsertBlockH      key.Binding
 	DeleteBlockH      key.Binding
 	PlayOrStop        key.Binding
+	Cut               key.Binding
+	Copy              key.Binding
+	Paste             key.Binding
 	SetPlayFromRow    key.Binding
 	EnterCommand      key.Binding
 	Undo              key.Binding
@@ -148,6 +151,18 @@ var defaultKeyMap = KeyMap{
 	DeleteBlockH: key.NewBinding(
 		key.WithKeys("ctrl+shift+left"),
 		key.WithHelp("C-S-left", "delete vertical block"),
+	),
+	Cut: key.NewBinding(
+		key.WithKeys("ctrl+x"),
+		key.WithHelp("C-x", "cut block"),
+	),
+	Copy: key.NewBinding(
+		key.WithKeys("ctrl+c"),
+		key.WithHelp("C-c", "copy block"),
+	),
+	Paste: key.NewBinding(
+		key.WithKeys("ctrl+v"),
+		key.WithHelp("C-v", "paste block"),
 	),
 	PlayOrStop: key.NewBinding(
 		key.WithKeys(" "),

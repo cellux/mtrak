@@ -37,6 +37,7 @@ func (m *Model) Reset() {
 	//m.msgs ?
 	m.undoableActions = nil
 	m.undoneActions = nil
+	m.clipboard = nil
 }
 
 func (m *Model) SetError(err error) {
@@ -311,6 +312,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.InsertBlockH()
 				case key.Matches(msg, m.keymap.DeleteBlockH):
 					m.DeleteBlockH()
+				case key.Matches(msg, m.keymap.Cut):
+					m.Cut()
+				case key.Matches(msg, m.keymap.Copy):
+					m.Copy()
+				case key.Matches(msg, m.keymap.Paste):
+					m.Paste()
 				case key.Matches(msg, m.keymap.PlayOrStop):
 					m.PlayOrStop()
 				case key.Matches(msg, m.keymap.SetPlayFromRow):
