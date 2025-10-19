@@ -42,8 +42,8 @@ type KeyMap struct {
 
 var defaultKeyMap = KeyMap{
 	Quit: key.NewBinding(
-		key.WithKeys("ctrl+c", "ctrl+q"),
-		key.WithHelp("C-c|C-q", "quit"),
+		key.WithKeys("ctrl+q"),
+		key.WithHelp("C-q", "quit"),
 	),
 	Up: key.NewBinding(
 		key.WithKeys("up"),
