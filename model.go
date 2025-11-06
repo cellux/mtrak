@@ -101,17 +101,20 @@ func (m *Model) GetFramesPerTick() int {
 	return int(math.Round(sr / bps / tpb))
 }
 
-func (m *Model) Process(nframes uint32) int {
-loop:
+func (m *Model) processPendingActions() {
 	for {
 		select {
 		case action := <-m.pendingActions:
 			action.doFn()
 			m.msgs <- action
 		default:
-			break loop
+			return
 		}
 	}
+}
+
+func (m *Model) Process(nframes uint32) int {
+	m.processPendingActions()
 	outPort := m.me.outPort
 	buf := outPort.MidiClearBuffer(nframes)
 	if !m.isPlaying {
@@ -120,10 +123,10 @@ loop:
 	}
 	framesPerTick := uint64(m.GetFramesPerTick())
 	var midiData MidiData
+	p := m.song.Patterns[m.playPattern]
 	for i := range nframes {
 		if m.playFrame%framesPerTick == 0 {
 			if m.playTick == 0 {
-				p := m.song.Patterns[m.playPattern]
 				row := p[m.playRow]
 				for _, msg := range row {
 					status := msg[0]
@@ -133,16 +136,16 @@ loop:
 						outPort.MidiEventWrite(&midiData, buf)
 					}
 				}
+			}
+			m.playTick++
+			if m.playTick >= m.song.TPL {
 				m.playRow++
 				if m.playRow == len(p) {
 					// TODO: advance to next pattern in sequence
 					m.playRow = 0
 				}
-				m.msgs <- redrawMsg{}
-			}
-			m.playTick++
-			if m.playTick == m.song.TPL {
 				m.playTick = 0
+				m.msgs <- redrawMsg{}
 			}
 		}
 		m.playFrame++
