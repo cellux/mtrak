@@ -183,6 +183,9 @@ func (m *Model) Init() tea.Cmd {
 			program.Send(msg)
 		}
 	}()
+	if m.filename != "" {
+		m.LoadSong()
+	}
 	return nil
 }
 
