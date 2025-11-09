@@ -8,7 +8,7 @@ import (
 type RowBuilder struct {
 	sb    strings.Builder
 	group strings.Builder
-	style lipgloss.Style
+	style *lipgloss.Style
 }
 
 func (rb *RowBuilder) WriteByte(b byte) error {
@@ -30,9 +30,11 @@ func (rb *RowBuilder) flush() {
 	}
 }
 
-func (rb *RowBuilder) SetStyle(style lipgloss.Style) {
-	rb.flush()
-	rb.style = style
+func (rb *RowBuilder) SetStyle(style *lipgloss.Style) {
+	if rb.style != style {
+		rb.flush()
+		rb.style = style
+	}
 }
 
 func (rb *RowBuilder) String() string {

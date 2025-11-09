@@ -3,89 +3,192 @@ package main
 import (
 	"fmt"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/lucasb-eyer/go-colorful"
 )
 
-type Color struct {
-	r, g, b int
+type Colors struct {
+	chromeFill  colorful.Color
+	chromeText  colorful.Color
+	headerLabel colorful.Color
+	headerValue colorful.Color
+	border      colorful.Color
+	trackLabel  colorful.Color
+	patternNum  colorful.Color
+	patternText colorful.Color
+
+	cursorFill colorful.Color
+	cursorText colorful.Color
+	brushFill  colorful.Color
+	brushText  colorful.Color
+	selectFill colorful.Color
+	selectText colorful.Color
+
+	playFill colorful.Color
+	playText colorful.Color
+	beatFill colorful.Color
+	beatText colorful.Color
+
+	errorFill colorful.Color
+	errorText colorful.Color
 }
 
-func (c Color) LGC() lipgloss.Color {
-	return lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", c.r, c.g, c.b))
+var colors Colors
+
+const (
+	cursorBit = 1
+	brushBit  = 2
+	selectBit = 4
+	playBit   = 8
+	beatBit   = 16
+)
+
+var patternPalette [32]lipgloss.Style
+
+type Styles struct {
+	chrome      lipgloss.Style
+	headerLabel lipgloss.Style
+	headerValue lipgloss.Style
+	border      lipgloss.Style
+	trackLabel  lipgloss.Style
+	patternNum  lipgloss.Style
+	error       lipgloss.Style
 }
 
-const (
-	highlightBit = 1
-	selectBit    = 2
-	brushBit     = 4
-	playBit      = 8
-)
+var styles Styles
 
-var palette [17]lipgloss.Style
+func modColor(color colorful.Color, dc, dl float64) colorful.Color {
+	h, c, l := color.Hcl()
+	return colorful.Hcl(h, c+dc, l+dl).Clamped()
+}
 
-const (
-	BackgroundIndex = 16
-)
+func LGC(color colorful.Color) lipgloss.Color {
+	return lipgloss.Color(color.Hex())
+}
 
 func init() {
-	for i := range 16 {
-		fg := Color{0xcc, 0xcc, 0xcc}
-		bg := Color{0x20, 0x20, 0x20}
-		if i&highlightBit > 0 {
-			fg = Color{0xff, 0xff, 0xff}
-			bg = Color{0x80, 0x80, 0x80}
+	colors.chromeFill = colorful.Hcl(250, 0.03, 0.14)
+	colors.chromeText = colorful.Hcl(250, 0.02, 0.88)
+	colors.headerLabel = colorful.Hcl(250, 0.01, 0.70)
+	colors.headerValue = colorful.Hcl(250, 0.02, 0.88)
+	colors.border = modColor(colors.chromeFill, 0, 0.10)
+	colors.trackLabel = modColor(colors.headerLabel, 0, -0.20)
+	colors.patternNum = colors.trackLabel
+	colors.patternText = colors.chromeText
+
+	colors.cursorFill = colorful.Hcl(220, 0.12, 0.40)
+	colors.cursorText = colorful.Hcl(220, 0.10, 0.88)
+	colors.brushFill = modColor(colors.cursorFill, -0.02, 0)
+	colors.brushText = colors.cursorText
+	colors.selectFill = modColor(colors.brushFill, -0.02, 0)
+	colors.selectText = colors.cursorText
+
+	colors.playFill = colorful.Hcl(40, 0.12, 0.40)
+	colors.playText = colors.cursorText
+	colors.beatFill = colorful.Hcl(40, 0.06, 0.20)
+	colors.beatText = colors.cursorText
+
+	colors.errorFill = colorful.Hcl(25, 0.14, 0.40)
+	colors.errorText = colorful.Hcl(25, 0.14, 0.66)
+
+	for i := range len(patternPalette) {
+		text := colors.patternText
+		fill := colors.chromeFill
+		if i&cursorBit > 0 {
+			text = text.BlendHcl(colors.cursorText, 0.5)
+			fill = fill.BlendHcl(colors.cursorFill, 0.5)
 		}
 		if i&selectBit > 0 {
-			bg.r += 0x60
+			text = text.BlendHcl(colors.selectText, 0.5)
+			fill = fill.BlendHcl(colors.selectFill, 0.5)
 		}
 		if i&brushBit > 0 {
-			bg.b += 0x60
+			text = text.BlendHcl(colors.brushText, 0.5)
+			fill = fill.BlendHcl(colors.brushFill, 0.5)
 		}
 		if i&playBit > 0 {
-			bg.g += 0x10
+			text = text.BlendHcl(colors.playText, 0.5)
+			fill = fill.BlendHcl(colors.playFill, 0.5)
 		}
-		palette[i] = lipgloss.Style{}.Foreground(fg.LGC()).Background(bg.LGC())
+		if i&beatBit > 0 {
+			text = text.BlendHcl(colors.beatText, 0.5)
+			fill = fill.BlendHcl(colors.beatFill, 0.5)
+		}
+		patternPalette[i] = lipgloss.Style{}.Foreground(LGC(text)).Background(LGC(fill))
 	}
-	palette[BackgroundIndex] = lipgloss.Style{}
+
+	styles.chrome = lipgloss.NewStyle().
+		Foreground(LGC(colors.chromeText)).
+		Background(LGC(colors.chromeFill))
+
+	styles.headerLabel = lipgloss.NewStyle().
+		Foreground(LGC(colors.headerLabel))
+
+	styles.headerValue = lipgloss.NewStyle().
+		Foreground(LGC(colors.headerValue))
+
+	styles.border = lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		Foreground(LGC(colors.border)).
+		Background(LGC(colors.chromeFill)).
+		BorderForeground(LGC(colors.border)).
+		BorderBackground(LGC(colors.chromeFill))
+
+	styles.trackLabel = lipgloss.NewStyle().
+		Foreground(LGC(colors.trackLabel)).
+		Background(LGC(colors.chromeFill))
+
+	styles.patternNum = lipgloss.NewStyle().
+		Foreground(LGC(colors.patternNum)).
+		Background(LGC(colors.chromeFill))
+
+	styles.error = lipgloss.NewStyle().
+		Foreground(LGC(colors.errorText)).
+		Background(LGC(colors.errorFill))
 }
 
 const hexDigits = "0123456789ABCDEF"
 
 func (m *Model) HeaderView() string {
 	var rb RowBuilder
-	rb.WriteString("BPM: ")
+	rb.SetStyle(&styles.headerLabel)
+	rb.WriteString("BPM:")
+	rb.SetStyle(&styles.headerValue)
 	rb.WriteString(fmt.Sprintf("%d", m.song.BPM))
 	rb.WriteByte(' ')
-	rb.WriteString("SR: ")
+	rb.SetStyle(&styles.headerLabel)
+	rb.WriteString("SR:")
+	rb.SetStyle(&styles.headerValue)
 	rb.WriteString(fmt.Sprintf("%d", m.GetSampleRate()))
 	rb.WriteByte(' ')
-	rb.WriteString("FPB: ")
+	rb.SetStyle(&styles.headerLabel)
+	rb.WriteString("FPB:")
+	rb.SetStyle(&styles.headerValue)
 	rb.WriteString(fmt.Sprintf("%d", m.GetFramesPerBeat()))
 	rb.WriteByte(' ')
-	rb.WriteString("TPB: ")
+	rb.SetStyle(&styles.headerLabel)
+	rb.WriteString("TPB:")
+	rb.SetStyle(&styles.headerValue)
 	rb.WriteString(fmt.Sprintf("%d", m.GetTicksPerBeat()))
 	rb.WriteByte(' ')
-	rb.WriteString("FPT: ")
+	rb.SetStyle(&styles.headerLabel)
+	rb.WriteString("FPT:")
+	rb.SetStyle(&styles.headerValue)
 	rb.WriteString(fmt.Sprintf("%d", m.GetFramesPerTick()))
 	rb.WriteByte(' ')
-	rb.WriteString("LPB: ")
+	rb.SetStyle(&styles.headerLabel)
+	rb.WriteString("LPB:")
+	rb.SetStyle(&styles.headerValue)
 	rb.WriteString(fmt.Sprintf("%d", m.song.LPB))
 	rb.WriteByte(' ')
-	rb.WriteString("TPL: ")
+	rb.SetStyle(&styles.headerLabel)
+	rb.WriteString("TPL:")
+	rb.SetStyle(&styles.headerValue)
 	rb.WriteString(fmt.Sprintf("%d", m.song.TPL))
 	rb.WriteByte(' ')
-	rb.WriteString("isPlaying: ")
-	rb.WriteString(fmt.Sprintf("%v", m.isPlaying))
-	rb.WriteByte(' ')
-	rb.WriteString("playTick: ")
-	rb.WriteString(fmt.Sprintf("%d", m.playTick))
-	rb.WriteByte(' ')
-	rb.WriteString("playFrame: ")
-	rb.WriteString(fmt.Sprintf("%v", m.playFrame))
-	rb.WriteByte(' ')
-	rb.WriteString("BRU: ")
-	rb.WriteString(fmt.Sprintf("(%d,%d):(%d,%d)",
-		m.brush.X,
-		m.brush.Y,
+	rb.SetStyle(&styles.headerLabel)
+	rb.WriteString("BRU:")
+	rb.SetStyle(&styles.headerValue)
+	rb.WriteString(fmt.Sprintf("(%d,%d)",
 		m.brush.W,
 		m.brush.H,
 	))
@@ -140,17 +243,10 @@ func (m *Model) PatternView(r Rect) string {
 		m.firstVisibleRow = 0
 	}
 	var rb RowBuilder
-	currentStyleIndex := BackgroundIndex
-	setStyle := func(index int) {
-		if index != currentStyleIndex {
-			currentStyleIndex = index
-			rb.SetStyle(palette[currentStyleIndex])
-		}
-	}
 	rowStrings := make([]string, 0, numRows)
 	for y := m.firstVisibleRow; y < min(patternHeight, m.firstVisibleRow+numRows); y++ {
 		row := p[y]
-		setStyle(BackgroundIndex)
+		rb.SetStyle(&styles.patternNum)
 		rb.WriteString(fmt.Sprintf("%04X", y))
 		rb.WriteByte(' ')
 		rowStyleIndex := 0
@@ -159,7 +255,7 @@ func (m *Model) PatternView(r Rect) string {
 		}
 		x := m.firstVisibleTrack * 6
 		for t := m.firstVisibleTrack; t < min(patternWidth, m.firstVisibleTrack+visibleTracks); t++ {
-			setStyle(rowStyleIndex)
+			rb.SetStyle(&patternPalette[rowStyleIndex])
 			if t > m.firstVisibleTrack {
 				rb.WriteByte(' ')
 			}
@@ -168,7 +264,7 @@ func (m *Model) PatternView(r Rect) string {
 				for j := range 2 {
 					cellStyleIndex := rowStyleIndex
 					if y == m.editPos.Y && x == m.editPos.X {
-						cellStyleIndex |= highlightBit
+						cellStyleIndex |= cursorBit
 					}
 					insideBrush := x >= m.brush.X &&
 						y >= m.brush.Y &&
@@ -177,7 +273,7 @@ func (m *Model) PatternView(r Rect) string {
 					if insideBrush {
 						cellStyleIndex |= brushBit
 					}
-					setStyle(cellStyleIndex)
+					rb.SetStyle(&patternPalette[cellStyleIndex])
 					b := msg[i]
 					if b == 0 {
 						rb.WriteRune('·')
@@ -192,15 +288,15 @@ func (m *Model) PatternView(r Rect) string {
 		rowStrings = append(rowStrings, rb.String())
 		rb.Reset()
 	}
-	patternStyle := lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
+	withoutTopBorderStyle := styles.border.
 		BorderTop(false).
 		BorderRight(true).
 		BorderBottom(true).
 		BorderLeft(true).
 		Padding(0, 1)
-	patternWithoutTopBorder := patternStyle.Render(lipgloss.JoinVertical(0, rowStrings...))
-	setStyle(BackgroundIndex)
+	patternWithoutTopBorder := withoutTopBorderStyle.Render(lipgloss.JoinVertical(0, rowStrings...))
+	topBorderStyle := styles.border.Border(lipgloss.Border{}, false)
+	rb.SetStyle(&topBorderStyle)
 	roundedBorder := lipgloss.RoundedBorder()
 	rb.WriteString(roundedBorder.TopLeft)
 	for range 1 + 4 + 1 {
@@ -213,7 +309,9 @@ func (m *Model) PatternView(r Rect) string {
 		}
 		rb.WriteString(roundedBorder.Top)
 		rb.WriteString("╴")
+		rb.SetStyle(&styles.trackLabel)
 		rb.WriteString(fmt.Sprintf("%02X", t))
+		rb.SetStyle(&topBorderStyle)
 		rb.WriteString("╶")
 		rb.WriteString(roundedBorder.Top)
 	}
@@ -229,10 +327,7 @@ func (m *Model) CommandView() string {
 }
 
 func (m *Model) ErrorView() string {
-	errorStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#ffffff")).
-		Background(lipgloss.Color("#ff0000"))
-	return errorStyle.Render(fmt.Sprintf("%s", m.err))
+	return styles.error.Render(fmt.Sprintf("%s", m.err))
 }
 
 func (m *Model) View() string {
@@ -256,5 +351,5 @@ func (m *Model) View() string {
 	if m.err != nil {
 		views = append(views, m.ErrorView())
 	}
-	return lipgloss.JoinVertical(lipgloss.Top, views...)
+	return lipgloss.JoinVertical(lipgloss.Left, views...)
 }
