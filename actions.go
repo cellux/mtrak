@@ -507,6 +507,7 @@ func (m *Model) SetPlayFromRow() {
 }
 
 func (m *Model) EnterCommand() {
+	m.prevmode = m.mode
 	m.mode = CommandMode
 	m.commandModel.Focus()
 }

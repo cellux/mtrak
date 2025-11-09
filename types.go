@@ -49,10 +49,18 @@ type Action struct {
 	undoFn ActionFunction
 }
 
+type Mode int
+
+const (
+	EditMode    Mode = 0
+	CommandMode Mode = 1
+)
+
 type Model struct {
 	err               error
 	keymap            *KeyMap
-	mode              int
+	mode              Mode
+	prevmode          Mode
 	windowSize        Size
 	me                *MidiEngine
 	song              *Song

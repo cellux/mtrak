@@ -16,6 +16,7 @@ func (m *Model) Reset() {
 	m.err = nil
 	//m.keymap = ?
 	m.mode = EditMode
+	m.prevmode = m.mode
 	//m.windowSize
 	//m.me
 	//m.song
@@ -349,7 +350,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ExecuteCommand(command)
 				fallthrough
 			case "esc":
-				m.mode = EditMode
+				m.mode = m.prevmode
 				m.commandModel.Blur()
 				m.commandModel.Reset()
 			}
