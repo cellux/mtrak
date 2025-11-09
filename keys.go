@@ -5,42 +5,42 @@ import (
 )
 
 type KeyMap struct {
-	Quit              key.Binding
-	Up                key.Binding
-	Down              key.Binding
-	PageUp            key.Binding
-	PageDown          key.Binding
-	JumpToFirstRow    key.Binding
-	JumpToLastRow     key.Binding
-	JumpToTopLeft     key.Binding
-	JumpToBottomRight key.Binding
-	Left              key.Binding
-	Right             key.Binding
-	NextTrack         key.Binding
-	PrevTrack         key.Binding
-	InsertBlank       key.Binding
-	DeleteLeft        key.Binding
-	IncBrushWidthExp  key.Binding
-	DecBrushWidthExp  key.Binding
-	IncBrushHeightExp key.Binding
-	DecBrushHeightExp key.Binding
-	IncBrushWidthLin  key.Binding
-	DecBrushWidthLin  key.Binding
-	IncBrushHeightLin key.Binding
-	DecBrushHeightLin key.Binding
-	InsertBlockV      key.Binding
-	DeleteBlockV      key.Binding
-	InsertBlockH      key.Binding
-	DeleteBlockH      key.Binding
-	PlayOrStop        key.Binding
-	Cut               key.Binding
-	Copy              key.Binding
-	Paste             key.Binding
-	SetPlayFromRow    key.Binding
-	EnterCommand      key.Binding
-	Undo              key.Binding
-	Redo              key.Binding
-	Save              key.Binding
+	Quit               key.Binding
+	Up                 key.Binding
+	Down               key.Binding
+	PageUp             key.Binding
+	PageDown           key.Binding
+	JumpToFirstRow     key.Binding
+	JumpToLastRow      key.Binding
+	JumpToTopLeft      key.Binding
+	JumpToBottomRight  key.Binding
+	Left               key.Binding
+	Right              key.Binding
+	NextTrack          key.Binding
+	PrevTrack          key.Binding
+	DeleteBrush        key.Binding
+	DeleteLeft         key.Binding
+	IncBrushWidth      key.Binding
+	DecBrushWidth      key.Binding
+	IncBrushHeight     key.Binding
+	DecBrushHeight     key.Binding
+	IncSelectionWidth  key.Binding
+	DecSelectionWidth  key.Binding
+	IncSelectionHeight key.Binding
+	DecSelectionHeight key.Binding
+	InsertBlockV       key.Binding
+	DeleteBlockV       key.Binding
+	InsertBlockH       key.Binding
+	DeleteBlockH       key.Binding
+	PlayOrStop         key.Binding
+	Cut                key.Binding
+	Copy               key.Binding
+	Paste              key.Binding
+	SetPlayFromRow     key.Binding
+	EnterCommand       key.Binding
+	Undo               key.Binding
+	Redo               key.Binding
+	Save               key.Binding
 }
 
 var defaultKeyMap = KeyMap{
@@ -96,45 +96,45 @@ var defaultKeyMap = KeyMap{
 		key.WithKeys("shift+tab"),
 		key.WithHelp("S+tab", "previous track"),
 	),
-	InsertBlank: key.NewBinding(
+	DeleteBrush: key.NewBinding(
 		key.WithKeys("."),
-		key.WithHelp(".", "insert blank"),
+		key.WithHelp(".", "delete area under brush"),
 	),
 	DeleteLeft: key.NewBinding(
 		key.WithKeys("backspace"),
 		key.WithHelp("backspace", "delete left"),
 	),
-	IncBrushWidthExp: key.NewBinding(
+	IncBrushWidth: key.NewBinding(
 		key.WithKeys("ctrl+right"),
-		key.WithHelp("C-right", "increase brush width (exp)"),
+		key.WithHelp("C-right", "increase brush width"),
 	),
-	DecBrushWidthExp: key.NewBinding(
+	DecBrushWidth: key.NewBinding(
 		key.WithKeys("ctrl+left"),
-		key.WithHelp("C-left", "decrease brush width (exp)"),
+		key.WithHelp("C-left", "decrease brush width"),
 	),
-	IncBrushHeightExp: key.NewBinding(
+	IncBrushHeight: key.NewBinding(
 		key.WithKeys("ctrl+down"),
-		key.WithHelp("C-down", "increase brush height (exp)"),
+		key.WithHelp("C-down", "increase brush height"),
 	),
-	DecBrushHeightExp: key.NewBinding(
+	DecBrushHeight: key.NewBinding(
 		key.WithKeys("ctrl+up"),
-		key.WithHelp("C-up", "decrease brush height (exp)"),
+		key.WithHelp("C-up", "decrease brush height"),
 	),
-	IncBrushWidthLin: key.NewBinding(
+	IncSelectionWidth: key.NewBinding(
 		key.WithKeys("shift+right"),
-		key.WithHelp("S-right", "increase brush width (lin)"),
+		key.WithHelp("S-right", "increase selection width"),
 	),
-	DecBrushWidthLin: key.NewBinding(
+	DecSelectionWidth: key.NewBinding(
 		key.WithKeys("shift+left"),
-		key.WithHelp("S-left", "decrease brush width (lin)"),
+		key.WithHelp("S-left", "decrease selection width"),
 	),
-	IncBrushHeightLin: key.NewBinding(
+	IncSelectionHeight: key.NewBinding(
 		key.WithKeys("shift+down"),
-		key.WithHelp("S-down", "increase brush height (lin)"),
+		key.WithHelp("S-down", "increase selection height"),
 	),
-	DecBrushHeightLin: key.NewBinding(
+	DecSelectionHeight: key.NewBinding(
 		key.WithKeys("shift+up"),
-		key.WithHelp("S-up", "decrease brush height (lin)"),
+		key.WithHelp("S-up", "decrease selection height"),
 	),
 	InsertBlockV: key.NewBinding(
 		key.WithKeys("insert", "ctrl+shift+down"),

@@ -12,8 +12,12 @@ func (m *Model) submitAction(doFn ActionFunction, undoFn ActionFunction) {
 
 func (m *Model) fix() {
 	patterns := m.song.Patterns
-	if m.editPattern < 0 || m.editPattern >= len(patterns) {
+	numPatterns := len(patterns)
+
+	if m.editPattern < 0 {
 		m.editPattern = 0
+	} else if m.editPattern >= numPatterns {
+		m.editPattern = numPatterns - 1
 	}
 
 	p := patterns[m.editPattern]
@@ -57,6 +61,26 @@ func (m *Model) fix() {
 	if m.brush.Y < 0 || m.brush.Y >= patternHeight {
 		m.CollapseBrush()
 	}
+
+	// fix selection
+	if m.sel.W > patternWidth {
+		m.sel.W = patternWidth
+	}
+	if m.sel.X+m.sel.W > patternWidth {
+		m.sel.X = patternWidth - m.sel.W
+	}
+	if m.sel.X < 0 || m.sel.X >= patternWidth {
+		m.CollapseSelection()
+	}
+	if m.sel.H > patternHeight {
+		m.sel.H = patternHeight
+	}
+	if m.sel.Y+m.sel.H > patternHeight {
+		m.sel.Y = patternHeight - m.sel.H
+	}
+	if m.sel.Y < 0 || m.sel.Y >= patternHeight {
+		m.CollapseSelection()
+	}
 }
 
 func (m *Model) moveBrush(dx, dy int) {
@@ -98,6 +122,7 @@ func (m *Model) moveBrush(dx, dy int) {
 			}
 		}
 	}
+	m.CollapseSelection()
 }
 
 func (m *Model) Up() {
@@ -157,7 +182,7 @@ func (m *Model) PrevTrack() {
 	m.moveBrush(-6, 0)
 }
 
-func (m *Model) InsertBlank() {
+func (m *Model) DeleteBrush() {
 	p := m.song.Patterns[m.editPattern]
 	editRow := p[m.editPos.Y]
 	patternWidth := len(editRow) * 6
@@ -194,7 +219,7 @@ func (m *Model) DeleteLeft() {
 	}
 }
 
-func (m *Model) stepBrushWidthExp(expandDir int) {
+func (m *Model) stepBrushWidth(expandDir int) {
 	p := m.song.Patterns[m.editPattern]
 	editRow := p[m.editPos.Y]
 	patternWidth := len(editRow) * 6
@@ -221,17 +246,18 @@ func (m *Model) stepBrushWidthExp(expandDir int) {
 		}
 	}
 	m.brush.X = m.editPos.X - (m.editPos.X % m.brush.W)
+	m.CollapseSelection()
 }
 
-func (m *Model) IncBrushWidthExp() {
-	m.stepBrushWidthExp(1)
+func (m *Model) IncBrushWidth() {
+	m.stepBrushWidth(1)
 }
 
-func (m *Model) DecBrushWidthExp() {
-	m.stepBrushWidthExp(-1)
+func (m *Model) DecBrushWidth() {
+	m.stepBrushWidth(-1)
 }
 
-func (m *Model) stepBrushHeightExp(expandDir int) {
+func (m *Model) stepBrushHeight(expandDir int) {
 	p := m.song.Patterns[m.editPattern]
 	patternHeight := len(p)
 	if expandDir == m.brush.ExpandDir.Y {
@@ -253,71 +279,80 @@ func (m *Model) stepBrushHeightExp(expandDir int) {
 		}
 	}
 	m.brush.Y = m.editPos.Y - (m.editPos.Y % m.brush.H)
+	m.CollapseSelection()
 }
 
-func (m *Model) IncBrushHeightExp() {
-	m.stepBrushHeightExp(1)
+func (m *Model) IncBrushHeight() {
+	m.stepBrushHeight(1)
 }
 
-func (m *Model) DecBrushHeightExp() {
-	m.stepBrushHeightExp(-1)
+func (m *Model) DecBrushHeight() {
+	m.stepBrushHeight(-1)
 }
 
-func (m *Model) IncBrushWidthLin() {
-	p := m.song.Patterns[m.editPattern]
-	editRow := p[m.editPos.Y]
-	patternWidth := len(editRow) * 6
-	brushWidthAdd := 0
-	switch {
-	case m.brush.W < 2:
-		brushWidthAdd = 1
-	case m.brush.W < 6:
-		brushWidthAdd = 2
-	default:
-		brushWidthAdd = 6
-	}
-	if m.brush.X+m.brush.W+brushWidthAdd <= patternWidth {
-		m.brush.W += brushWidthAdd
+func (m *Model) IncSelectionWidth() {
+	sel := m.sel
+	if m.sel.X+m.sel.W == m.brush.X+m.brush.W {
+		// brush is at right side of current selection
+		m.Right()
+		m.sel = sel
+		m.sel.W = m.brush.X + m.brush.W - m.sel.X
+	} else {
+		m.Right()
+		m.sel = sel
+		m.sel.X = m.brush.X
+		m.sel.W = sel.X + sel.W - m.sel.X
 	}
 }
 
-func (m *Model) DecBrushWidthLin() {
-	brushWidthAdd := 0
-	switch {
-	case m.brush.W > 6:
-		brushWidthAdd = -6
-	case m.brush.W > 2:
-		brushWidthAdd = -2
-	case m.brush.W == 2:
-		brushWidthAdd = -1
-	}
-	m.brush.W += brushWidthAdd
-}
-
-func (m *Model) IncBrushHeightLin() {
-	p := m.song.Patterns[m.editPattern]
-	patternHeight := len(p)
-	brushHeightAdd := 0
-	switch {
-	case m.brush.H < m.song.LPB:
-		brushHeightAdd = 1
-	default:
-		brushHeightAdd = m.song.LPB
-	}
-	if m.brush.Y+m.brush.H+brushHeightAdd <= patternHeight {
-		m.brush.H += brushHeightAdd
+func (m *Model) DecSelectionWidth() {
+	sel := m.sel
+	if m.sel.X == m.brush.X {
+		// brush is at left side of current selection
+		m.Left()
+		m.sel = sel
+		m.sel.X = m.brush.X
+		m.sel.W = sel.X + sel.W - m.sel.X
+	} else {
+		m.Left()
+		m.sel = sel
+		m.sel.W = m.brush.X + m.brush.W - m.sel.X
 	}
 }
 
-func (m *Model) DecBrushHeightLin() {
-	brushHeightAdd := 0
-	switch {
-	case m.brush.H > m.song.LPB:
-		brushHeightAdd = -m.song.LPB
-	case m.brush.H > 1:
-		brushHeightAdd = -1
+func (m *Model) IncSelectionHeight() {
+	if m.brush.W == 1 && m.sel.W == 1 {
+		for m.brush.W < 6 {
+			m.stepBrushWidth(1)
+		}
 	}
-	m.brush.H += brushHeightAdd
+	sel := m.sel
+	if m.sel.Y+m.sel.H == m.brush.Y+m.brush.H {
+		// brush is at bottom side of current selection
+		m.Down()
+		m.sel = sel
+		m.sel.H = m.brush.Y + m.brush.H - m.sel.Y
+	} else {
+		m.Down()
+		m.sel = sel
+		m.sel.Y = m.brush.Y
+		m.sel.H = sel.Y + sel.H - m.sel.Y
+	}
+}
+
+func (m *Model) DecSelectionHeight() {
+	sel := m.sel
+	if m.sel.Y == m.brush.Y {
+		// brush os at top side of current selection
+		m.Up()
+		m.sel = sel
+		m.sel.Y = m.brush.Y
+		m.sel.H = sel.Y + sel.H - m.sel.Y
+	} else {
+		m.Up()
+		m.sel = sel
+		m.sel.H = m.brush.Y + m.brush.H - m.sel.Y
+	}
 }
 
 func (m *Model) InsertBlockV() {
@@ -423,27 +458,36 @@ func (m *Model) DeleteBlockH() {
 }
 
 func (m *Model) Cut() {
+	p := m.song.Patterns[m.editPattern]
+	sel := m.sel
+	block := p.getBlock(sel)
 	m.submitAction(
 		func() {
-			m.clipboard = m.getBlock()
-			m.zeroBlock()
+			m.clipboard = block
+			m.pasteOffset = sel.X % 6
+			p.zeroBlock(sel)
 		},
 		func() {
-			m.setBlock(m.clipboard)
+			p := m.song.Patterns[m.editPattern]
+			p.setBlock(sel, block)
 		},
 	)
 }
 
 func (m *Model) Copy() {
+	p := m.song.Patterns[m.editPattern]
+	sel := m.sel
+	block := p.getBlock(sel)
 	m.submitAction(
 		func() {
-			m.clipboard = m.getBlock()
+			m.clipboard = block
+			m.pasteOffset = sel.X % 6
 		},
 		nil,
 	)
 }
 
-func (m *Model) pasteBlock(block Block) (prevBlock Block) {
+func (m *Model) pasteBlock(pos Point, block Block) (prevBlock Block) {
 	if block == nil {
 		return
 	}
@@ -457,11 +501,11 @@ func (m *Model) pasteBlock(block Block) (prevBlock Block) {
 	}
 	p := m.song.Patterns[m.editPattern]
 	patternHeight := len(p)
-	editRow := p[m.editPos.Y]
+	editRow := p[pos.Y]
 	patternWidth := len(editRow) * 6
 	rect := Rect{
-		X: m.editPos.X,
-		Y: m.editPos.Y,
+		X: pos.X - pos.X%6 + m.pasteOffset,
+		Y: pos.Y,
 		W: blockW,
 		H: blockH,
 	}
@@ -478,12 +522,13 @@ func (m *Model) pasteBlock(block Block) (prevBlock Block) {
 
 func (m *Model) Paste() {
 	var prevBlock Block
+	pos := m.editPos
 	m.submitAction(
 		func() {
-			prevBlock = m.pasteBlock(m.clipboard)
+			prevBlock = m.pasteBlock(pos, m.clipboard)
 		},
 		func() {
-			m.pasteBlock(prevBlock)
+			m.pasteBlock(pos, prevBlock)
 		},
 	)
 }

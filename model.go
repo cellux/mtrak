@@ -7,7 +7,7 @@ import (
 	"math"
 )
 
-var defaultBrush = Brush{
+var defaultBrush = Area{
 	Rect:      Rect{0, 0, 1, 1},
 	ExpandDir: Point{1, 1},
 }
@@ -21,6 +21,7 @@ func (m *Model) Reset() {
 	//m.me
 	//m.song
 	m.brush = defaultBrush
+	m.sel = m.brush.Rect
 	m.editPattern = 0
 	m.editPos.X = 0
 	m.editPos.Y = 0
@@ -39,6 +40,7 @@ func (m *Model) Reset() {
 	m.undoableActions = nil
 	m.undoneActions = nil
 	m.clipboard = nil
+	m.pasteOffset = 0
 }
 
 func (m *Model) SetError(err error) {
@@ -50,6 +52,11 @@ func (m *Model) CollapseBrush() {
 	m.brush.Y = m.editPos.Y
 	m.brush.W = 1
 	m.brush.H = 1
+	m.CollapseSelection()
+}
+
+func (m *Model) CollapseSelection() {
+	m.sel = m.brush.Rect
 }
 
 func (m *Model) SetSong(song *Song) {
@@ -291,26 +298,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.NextTrack()
 				case key.Matches(msg, m.keymap.PrevTrack):
 					m.PrevTrack()
-				case key.Matches(msg, m.keymap.InsertBlank):
-					m.InsertBlank()
+				case key.Matches(msg, m.keymap.DeleteBrush):
+					m.DeleteBrush()
 				case key.Matches(msg, m.keymap.DeleteLeft):
 					m.DeleteLeft()
-				case key.Matches(msg, m.keymap.IncBrushWidthExp):
-					m.IncBrushWidthExp()
-				case key.Matches(msg, m.keymap.DecBrushWidthExp):
-					m.DecBrushWidthExp()
-				case key.Matches(msg, m.keymap.IncBrushHeightExp):
-					m.IncBrushHeightExp()
-				case key.Matches(msg, m.keymap.DecBrushHeightExp):
-					m.DecBrushHeightExp()
-				case key.Matches(msg, m.keymap.IncBrushWidthLin):
-					m.IncBrushWidthLin()
-				case key.Matches(msg, m.keymap.DecBrushWidthLin):
-					m.DecBrushWidthLin()
-				case key.Matches(msg, m.keymap.IncBrushHeightLin):
-					m.IncBrushHeightLin()
-				case key.Matches(msg, m.keymap.DecBrushHeightLin):
-					m.DecBrushHeightLin()
+				case key.Matches(msg, m.keymap.IncBrushWidth):
+					m.IncBrushWidth()
+				case key.Matches(msg, m.keymap.DecBrushWidth):
+					m.DecBrushWidth()
+				case key.Matches(msg, m.keymap.IncBrushHeight):
+					m.IncBrushHeight()
+				case key.Matches(msg, m.keymap.DecBrushHeight):
+					m.DecBrushHeight()
+				case key.Matches(msg, m.keymap.IncSelectionWidth):
+					m.IncSelectionWidth()
+				case key.Matches(msg, m.keymap.DecSelectionWidth):
+					m.DecSelectionWidth()
+				case key.Matches(msg, m.keymap.IncSelectionHeight):
+					m.IncSelectionHeight()
+				case key.Matches(msg, m.keymap.DecSelectionHeight):
+					m.DecSelectionHeight()
 				case key.Matches(msg, m.keymap.InsertBlockV):
 					m.InsertBlockV()
 				case key.Matches(msg, m.keymap.DeleteBlockV):

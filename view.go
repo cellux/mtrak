@@ -274,6 +274,13 @@ func (m *Model) PatternView(r Rect) string {
 					if insideBrush {
 						cellStyleIndex |= brushBit
 					}
+					insideSelection := x >= m.sel.X &&
+						y >= m.sel.Y &&
+						x < (m.sel.X+m.sel.W) &&
+						y < (m.sel.Y+m.sel.H)
+					if insideSelection {
+						cellStyleIndex |= selectBit
+					}
 					rb.SetStyle(&patternPalette[cellStyleIndex])
 					b := msg[i]
 					if b == 0 {

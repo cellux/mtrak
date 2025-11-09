@@ -35,7 +35,7 @@ type Rect struct {
 	H int
 }
 
-type Brush struct {
+type Area struct {
 	Rect
 	ExpandDir Point
 }
@@ -64,7 +64,8 @@ type Model struct {
 	windowSize        Size
 	me                *MidiEngine
 	song              *Song
-	brush             Brush
+	brush             Area
+	sel               Rect
 	editPattern       int
 	editPos           Point
 	firstVisibleRow   int
@@ -82,6 +83,7 @@ type Model struct {
 	undoableActions   []Action
 	undoneActions     []Action
 	clipboard         Block
+	pasteOffset       int
 }
 
 type (
