@@ -503,7 +503,15 @@ func (m *Model) PlayOrStop() {
 }
 
 func (m *Model) SetPlayFromRow() {
-	m.playFromRow = m.editPos.Y
+	m.submitAction(
+		func() {
+			m.playFromRow = m.editPos.Y
+			if !m.isPlaying {
+				m.playRow = m.playFromRow
+			}
+		},
+		nil,
+	)
 }
 
 func (m *Model) EnterCommand() {

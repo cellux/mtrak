@@ -82,9 +82,9 @@ func init() {
 	colors.selectFill = modColor(colors.brushFill, -0.02, 0)
 	colors.selectText = colors.cursorText
 
-	colors.playFill = colorful.Hcl(40, 0.12, 0.40)
+	colors.playFill = colorful.Hcl(40, 0.14, 0.40)
 	colors.playText = colors.cursorText
-	colors.beatFill = colorful.Hcl(40, 0.06, 0.20)
+	colors.beatFill = colorful.Hcl(40, 0.10, 0.20)
 	colors.beatText = colors.cursorText
 
 	colors.errorFill = colorful.Hcl(25, 0.14, 0.40)
@@ -197,54 +197,52 @@ func (m *Model) HeaderView() string {
 
 func (m *Model) PatternView(r Rect) string {
 	p := m.song.Patterns[m.editPattern]
-	patternHeight := len(p)
+	numPatternRows := len(p)
 	editRow := p[m.editPos.Y]
-	patternWidth := len(editRow)
-	numRows := r.H
-	numRows -= 2 // borders
-	numCols := r.W
-	numCols -= 2 // borders
-	numCols -= 2 // padding
-	numCols -= 4 // row index
-	numCols -= 1 // row index gap
+	numPatternTracks := len(editRow)
+	patternHeight := r.H
+	patternHeight -= 2 // borders
+	patternWidth := r.W
+	patternWidth -= 2 // borders
+	patternWidth -= 2 // padding
+	patternWidth -= 4 // row index
+	patternWidth -= 1 // row index gap
 	var maxVisibleTracks int
-	if numCols%7 == 6 {
-		maxVisibleTracks = (numCols + 1) / 7
-	} else {
-		maxVisibleTracks = numCols / 7
-	}
-	if numRows <= 0 || maxVisibleTracks < 1 {
+	trackWidth := 3 * 2
+	trackWidthPlusGap := trackWidth + 1
+	maxVisibleTracks = (patternWidth + 1) / trackWidthPlusGap
+	if patternHeight <= 0 || maxVisibleTracks < 1 {
 		return ""
 	}
-	visibleTracks := min(maxVisibleTracks, patternWidth)
-	numCols = visibleTracks * 6
-	if m.brush.X+m.brush.W > m.firstVisibleTrack*6+numCols {
-		m.firstVisibleTrack = (m.brush.X + m.brush.W - numCols + 6) / 6
+	visibleTracks := min(maxVisibleTracks, numPatternTracks)
+	numCols := visibleTracks * trackWidth
+	if m.brush.X+m.brush.W > m.firstVisibleTrack*trackWidth+numCols {
+		m.firstVisibleTrack = (m.brush.X + m.brush.W - numCols + trackWidth) / trackWidth
 	}
-	if m.brush.X < m.firstVisibleTrack*6 {
-		m.firstVisibleTrack = m.brush.X / 6
+	if m.brush.X < m.firstVisibleTrack*trackWidth {
+		m.firstVisibleTrack = m.brush.X / trackWidth
 	}
-	if m.firstVisibleTrack+visibleTracks > patternWidth {
-		m.firstVisibleTrack = patternWidth - visibleTracks
+	if m.firstVisibleTrack+visibleTracks > numPatternTracks {
+		m.firstVisibleTrack = numPatternTracks - visibleTracks
 	}
 	if m.firstVisibleTrack < 0 {
 		m.firstVisibleTrack = 0
 	}
-	if m.brush.Y+m.brush.H > m.firstVisibleRow+numRows {
-		m.firstVisibleRow = m.brush.Y + m.brush.H - numRows
+	if m.brush.Y+m.brush.H > m.firstVisibleRow+patternHeight {
+		m.firstVisibleRow = m.brush.Y + m.brush.H - patternHeight
 	}
 	if m.brush.Y < m.firstVisibleRow {
 		m.firstVisibleRow = m.brush.Y
 	}
-	if m.firstVisibleRow+numRows > patternHeight {
-		m.firstVisibleRow = patternHeight - numRows
+	if m.firstVisibleRow+patternHeight > numPatternRows {
+		m.firstVisibleRow = numPatternRows - patternHeight
 	}
 	if m.firstVisibleRow < 0 {
 		m.firstVisibleRow = 0
 	}
 	var rb RowBuilder
-	rowStrings := make([]string, 0, numRows)
-	for y := m.firstVisibleRow; y < min(patternHeight, m.firstVisibleRow+numRows); y++ {
+	rowStrings := make([]string, 0, patternHeight)
+	for y := m.firstVisibleRow; y < min(numPatternRows, m.firstVisibleRow+patternHeight); y++ {
 		row := p[y]
 		rb.SetStyle(&styles.patternNum)
 		rb.WriteString(fmt.Sprintf("%04X", y))
@@ -253,8 +251,11 @@ func (m *Model) PatternView(r Rect) string {
 		if y == m.playRow {
 			rowStyleIndex |= playBit
 		}
-		x := m.firstVisibleTrack * 6
-		for t := m.firstVisibleTrack; t < min(patternWidth, m.firstVisibleTrack+visibleTracks); t++ {
+		if y%m.song.LPB == 0 {
+			rowStyleIndex |= beatBit
+		}
+		x := m.firstVisibleTrack * trackWidth
+		for t := m.firstVisibleTrack; t < min(numPatternTracks, m.firstVisibleTrack+visibleTracks); t++ {
 			rb.SetStyle(&patternPalette[rowStyleIndex])
 			if t > m.firstVisibleTrack {
 				rb.WriteByte(' ')
@@ -303,7 +304,7 @@ func (m *Model) PatternView(r Rect) string {
 		// padding + row index + gap
 		rb.WriteString(roundedBorder.Top)
 	}
-	for t := m.firstVisibleTrack; t < min(patternWidth, m.firstVisibleTrack+visibleTracks); t++ {
+	for t := m.firstVisibleTrack; t < min(numPatternTracks, m.firstVisibleTrack+visibleTracks); t++ {
 		if t > m.firstVisibleTrack {
 			rb.WriteString(roundedBorder.Top)
 		}
