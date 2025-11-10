@@ -301,8 +301,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.PrevTrack()
 				case key.Matches(msg, m.keymap.DeleteBrush):
 					m.DeleteBrush()
-				case key.Matches(msg, m.keymap.DeleteLeft):
-					m.DeleteLeft()
 				case key.Matches(msg, m.keymap.IncBrushWidth):
 					m.IncBrushWidth()
 				case key.Matches(msg, m.keymap.DecBrushWidth):
@@ -322,7 +320,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case key.Matches(msg, m.keymap.InsertBlockV):
 					m.InsertBlockV()
 				case key.Matches(msg, m.keymap.DeleteBlockV):
-					m.DeleteBlockV()
+					m.DeleteBlockV(false)
+				case key.Matches(msg, m.keymap.BackspaceBlockV):
+					m.DeleteBlockV(true)
 				case key.Matches(msg, m.keymap.InsertBlockH):
 					m.InsertBlockH()
 				case key.Matches(msg, m.keymap.DeleteBlockH):

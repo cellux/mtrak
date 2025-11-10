@@ -203,23 +203,6 @@ func (m *Model) DeleteBrush() {
 	}
 }
 
-func (m *Model) DeleteLeft() {
-	var prevBlock Block
-	if m.brush.X-m.brush.W >= 0 {
-		m.submitAction(
-			func() {
-				m.Left()
-				prevBlock = m.getBlock()
-				m.zeroBlock()
-			},
-			func() {
-				m.setBlock(prevBlock)
-				m.Right()
-			},
-		)
-	}
-}
-
 func (m *Model) stepBrushWidth(expandDir int) {
 	p := m.song.Patterns[m.editPattern]
 	editRow := p[m.editPos.Y]
@@ -392,31 +375,51 @@ func (m *Model) InsertBlockV() {
 	)
 }
 
-func (m *Model) DeleteBlockV() {
+func (m *Model) DeleteBlockV(backspace bool) {
+	if backspace && m.sel.Y < m.sel.H {
+		return
+	}
 	m.applyDefaultBrush()
 	p := m.song.Patterns[m.editPattern]
 	clone := p.clone()
 	patternHeight := len(p)
-	blockToMove := Rect{
-		m.sel.X,
-		m.sel.Y + m.sel.H,
-		m.sel.W,
-		patternHeight - m.sel.Y - m.sel.H,
+	oldSel := m.sel
+	sel := oldSel
+	oldBrush := m.brush
+	brush := oldBrush
+	oldEditPos := m.editPos
+	editPos := oldEditPos
+	if backspace {
+		sel.Y -= sel.H
+		brush.Y -= sel.H
+		editPos.Y -= sel.H
 	}
-	clone.copyBlock(blockToMove, 0, -m.sel.H)
+	blockToMove := Rect{
+		sel.X,
+		sel.Y + sel.H,
+		sel.W,
+		patternHeight - sel.Y - sel.H,
+	}
+	clone.copyBlock(blockToMove, 0, -sel.H)
 	blockToZero := Rect{
-		m.sel.X,
-		patternHeight - m.sel.H,
-		m.sel.W,
-		m.sel.H,
+		sel.X,
+		patternHeight - sel.H,
+		sel.W,
+		sel.H,
 	}
 	clone.zeroBlock(blockToZero)
 	m.submitAction(
 		func() {
+			m.sel = sel
+			m.brush = brush
+			m.editPos = editPos
 			m.ReplaceEditPattern(clone)
 		},
 		func() {
 			m.ReplaceEditPattern(p)
+			m.sel = oldSel
+			m.brush = oldBrush
+			m.editPos = oldEditPos
 		},
 	)
 }
