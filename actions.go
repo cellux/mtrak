@@ -320,12 +320,16 @@ func (m *Model) DecSelectionWidth() {
 	}
 }
 
-func (m *Model) IncSelectionHeight() {
+func (m *Model) applyDefaultBrushWidth() {
 	if m.brush.W == 1 && m.sel.W == 1 {
 		for m.brush.W < 6 {
 			m.stepBrushWidth(1)
 		}
 	}
+}
+
+func (m *Model) IncSelectionHeight() {
+	m.applyDefaultBrushWidth()
 	sel := m.sel
 	if m.sel.Y+m.sel.H == m.brush.Y+m.brush.H {
 		// brush is at bottom side of current selection
@@ -341,6 +345,7 @@ func (m *Model) IncSelectionHeight() {
 }
 
 func (m *Model) DecSelectionHeight() {
+	m.applyDefaultBrushWidth()
 	sel := m.sel
 	if m.sel.Y == m.brush.Y {
 		// brush os at top side of current selection
@@ -356,17 +361,18 @@ func (m *Model) DecSelectionHeight() {
 }
 
 func (m *Model) InsertBlockV() {
+	m.applyDefaultBrushWidth()
 	p := m.song.Patterns[m.editPattern]
 	clone := p.clone()
 	patternHeight := len(p)
 	blockToMove := Rect{
-		m.brush.X,
-		m.brush.Y,
-		m.brush.W,
-		patternHeight - m.brush.Y - m.brush.H,
+		m.sel.X,
+		m.sel.Y,
+		m.sel.W,
+		patternHeight - m.sel.Y - m.sel.H,
 	}
-	clone.copyBlock(blockToMove, 0, m.brush.H)
-	clone.zeroBlock(m.brush.Rect)
+	clone.copyBlock(blockToMove, 0, m.sel.H)
+	clone.zeroBlock(m.sel)
 	m.submitAction(
 		func() {
 			m.ReplaceEditPattern(clone)
@@ -378,21 +384,22 @@ func (m *Model) InsertBlockV() {
 }
 
 func (m *Model) DeleteBlockV() {
+	m.applyDefaultBrushWidth()
 	p := m.song.Patterns[m.editPattern]
 	clone := p.clone()
 	patternHeight := len(p)
 	blockToMove := Rect{
-		m.brush.X,
-		m.brush.Y + m.brush.H,
-		m.brush.W,
-		patternHeight - m.brush.Y - m.brush.H,
+		m.sel.X,
+		m.sel.Y + m.sel.H,
+		m.sel.W,
+		patternHeight - m.sel.Y - m.sel.H,
 	}
-	clone.copyBlock(blockToMove, 0, -m.brush.H)
+	clone.copyBlock(blockToMove, 0, -m.sel.H)
 	blockToZero := Rect{
-		m.brush.X,
-		patternHeight - m.brush.H,
-		m.brush.W,
-		m.brush.H,
+		m.sel.X,
+		patternHeight - m.sel.H,
+		m.sel.W,
+		m.sel.H,
 	}
 	clone.zeroBlock(blockToZero)
 	m.submitAction(
@@ -411,13 +418,13 @@ func (m *Model) InsertBlockH() {
 	editRow := p[m.editPos.Y]
 	patternWidth := len(editRow) * 6
 	blockToMove := Rect{
-		m.brush.X,
-		m.brush.Y,
-		patternWidth - m.brush.X - m.brush.W,
-		m.brush.H,
+		m.sel.X,
+		m.sel.Y,
+		patternWidth - m.sel.X - m.sel.W,
+		m.sel.H,
 	}
-	clone.copyBlock(blockToMove, m.brush.W, 0)
-	clone.zeroBlock(m.brush.Rect)
+	clone.copyBlock(blockToMove, m.sel.W, 0)
+	clone.zeroBlock(m.sel)
 	m.submitAction(
 		func() {
 			m.ReplaceEditPattern(clone)
@@ -434,17 +441,17 @@ func (m *Model) DeleteBlockH() {
 	editRow := p[m.editPos.Y]
 	patternWidth := len(editRow) * 6
 	blockToMove := Rect{
-		m.brush.X + m.brush.W,
-		m.brush.Y,
-		patternWidth - m.brush.X - m.brush.W,
-		m.brush.H,
+		m.sel.X + m.sel.W,
+		m.sel.Y,
+		patternWidth - m.sel.X - m.sel.W,
+		m.sel.H,
 	}
-	clone.copyBlock(blockToMove, -m.brush.W, 0)
+	clone.copyBlock(blockToMove, -m.sel.W, 0)
 	blockToZero := Rect{
-		patternWidth - m.brush.W,
-		m.brush.Y,
-		m.brush.W,
-		m.brush.H,
+		patternWidth - m.sel.W,
+		m.sel.Y,
+		m.sel.W,
+		m.sel.H,
 	}
 	clone.zeroBlock(blockToZero)
 	m.submitAction(
@@ -579,14 +586,11 @@ func (m *Model) LoadSong() {
 		m.SetError(err)
 		return
 	}
-	prevSong := m.song
 	m.submitAction(
 		func() {
 			m.SetSong(song)
 		},
-		func() {
-			m.SetSong(prevSong)
-		},
+		nil,
 	)
 }
 
