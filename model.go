@@ -41,6 +41,7 @@ func (m *Model) Reset() {
 	m.undoneActions = nil
 	m.clipboard = nil
 	m.pasteOffset = 0
+	m.defaultBrush = false
 }
 
 func (m *Model) SetError(err error) {
