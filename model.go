@@ -7,7 +7,7 @@ import (
 	"math"
 )
 
-var defaultBrush = Area{
+var defaultBrush = Brush{
 	Rect:      Rect{0, 0, 1, 1},
 	ExpandDir: Point{1, 1},
 }

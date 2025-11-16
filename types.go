@@ -35,7 +35,7 @@ type Rect struct {
 	H int
 }
 
-type Area struct {
+type Brush struct {
 	Rect
 	ExpandDir Point
 }
@@ -64,7 +64,7 @@ type Model struct {
 	windowSize        Size
 	me                *MidiEngine
 	song              *Song
-	brush             Area
+	brush             Brush
 	sel               Rect
 	editPattern       int
 	editPos           Point
