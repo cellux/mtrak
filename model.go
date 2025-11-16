@@ -18,7 +18,7 @@ func (m *Model) Reset() {
 	m.mode = EditMode
 	m.prevmode = m.mode
 	//m.windowSize
-	//m.me
+	//m.midiEngine
 	//m.song
 	m.brush = defaultBrush
 	m.sel = m.brush.Rect
@@ -86,7 +86,7 @@ func (m *Model) QuitWithError(err error) tea.Cmd {
 }
 
 func (m *Model) GetSampleRate() int {
-	return int(m.me.client.GetSampleRate())
+	return int(m.midiEngine.client.GetSampleRate())
 }
 
 func (m *Model) GetBeatsPerSecond() float64 {
@@ -124,7 +124,7 @@ func (m *Model) processPendingActions() {
 
 func (m *Model) Process(nframes uint32) int {
 	m.processPendingActions()
-	outPort := m.me.outPort
+	outPort := m.midiEngine.outPort
 	buf := outPort.MidiClearBuffer(nframes)
 	if !m.isPlaying {
 		m.playFrame += uint64(nframes)
@@ -172,8 +172,8 @@ func makePattern(rowCount, trackCount int) Pattern {
 
 func (m *Model) Init() tea.Cmd {
 	m.keymap = &defaultKeyMap
-	m.me = &MidiEngine{}
-	if err := m.me.Open(m.Process); err != nil {
+	m.midiEngine = &MidiEngine{}
+	if err := m.midiEngine.Open(m.Process); err != nil {
 		return m.QuitWithError(err)
 	}
 	m.song = &Song{
@@ -380,9 +380,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) Close() error {
-	if m.me != nil {
-		m.me.Close()
-		m.me = nil
+	if m.midiEngine != nil {
+		m.midiEngine.Close()
+		m.midiEngine = nil
 	}
 	return nil
 }

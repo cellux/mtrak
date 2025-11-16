@@ -62,7 +62,7 @@ type Model struct {
 	mode              Mode
 	prevmode          Mode
 	windowSize        Size
-	me                *MidiEngine
+	midiEngine        *MidiEngine
 	song              *Song
 	brush             Brush
 	sel               Rect
