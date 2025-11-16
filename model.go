@@ -348,6 +348,14 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 				m.DeleteBlock(true)
 			case key.Matches(msg, m.keymap.ZeroBlock):
 				m.ZeroBlock()
+			case key.Matches(msg, m.keymap.NextTrack):
+				m.brush.Y = m.sel.Y
+				m.editPos.Y = m.sel.Y
+				leaveSelectMode = true
+			case key.Matches(msg, m.keymap.PrevTrack):
+				m.brush.Y = m.sel.Y
+				m.editPos.Y = m.sel.Y
+				leaveSelectMode = true
 			case key.Matches(msg, m.keymap.Cut):
 				m.Cut()
 			case key.Matches(msg, m.keymap.Copy):
