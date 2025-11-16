@@ -12,6 +12,30 @@ func (p *Pattern) clone() Pattern {
 	return clone
 }
 
+func (p *Pattern) insertTrack(at int) Pattern {
+	clone := make(Pattern, len(*p))
+	for rowIndex := 0; rowIndex < len(*p); rowIndex++ {
+		srow := (*p)[rowIndex]
+		drow := make(Row, len(srow)+1)
+		drow = slices.Replace(drow, 0, at, srow[:at]...)
+		drow = slices.Replace(drow, at+1, len(drow), srow[at:]...)
+		clone[rowIndex] = drow
+	}
+	return clone
+}
+
+func (p *Pattern) deleteTrack(at int) Pattern {
+	clone := make(Pattern, len(*p))
+	for rowIndex := 0; rowIndex < len(*p); rowIndex++ {
+		srow := (*p)[rowIndex]
+		drow := make(Row, len(srow)-1)
+		drow = slices.Replace(drow, 0, at, srow[:at]...)
+		drow = slices.Replace(drow, at, len(drow), srow[at+1:]...)
+		clone[rowIndex] = drow
+	}
+	return clone
+}
+
 func (p *Pattern) getDigit(x, y int) byte {
 	row := (*p)[y]
 	msg := &row[x/6]

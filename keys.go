@@ -18,6 +18,8 @@ type KeyMap struct {
 	Right              key.Binding
 	NextTrack          key.Binding
 	PrevTrack          key.Binding
+	InsertTrack        key.Binding
+	DeleteTrack        key.Binding
 	DeleteBrush        key.Binding
 	IncBrushWidth      key.Binding
 	DecBrushWidth      key.Binding
@@ -27,11 +29,9 @@ type KeyMap struct {
 	DecSelectionWidth  key.Binding
 	IncSelectionHeight key.Binding
 	DecSelectionHeight key.Binding
-	InsertBlockV       key.Binding
-	DeleteBlockV       key.Binding
-	BackspaceBlockV    key.Binding
-	InsertBlockH       key.Binding
-	DeleteBlockH       key.Binding
+	InsertBlock        key.Binding
+	DeleteBlock        key.Binding
+	BackspaceBlock     key.Binding
 	PlayOrStop         key.Binding
 	Cut                key.Binding
 	Copy               key.Binding
@@ -96,6 +96,14 @@ var defaultKeyMap = KeyMap{
 		key.WithKeys("shift+tab"),
 		key.WithHelp("S+tab", "previous track"),
 	),
+	InsertTrack: key.NewBinding(
+		key.WithKeys("ctrl+shift+right"),
+		key.WithHelp("C-S-right", "insert track"),
+	),
+	DeleteTrack: key.NewBinding(
+		key.WithKeys("ctrl+shift+left"),
+		key.WithHelp("C-S-left", "delete track"),
+	),
 	DeleteBrush: key.NewBinding(
 		key.WithKeys("."),
 		key.WithHelp(".", "delete area under brush"),
@@ -132,25 +140,17 @@ var defaultKeyMap = KeyMap{
 		key.WithKeys("shift+up"),
 		key.WithHelp("S-up", "decrease selection height"),
 	),
-	InsertBlockV: key.NewBinding(
+	InsertBlock: key.NewBinding(
 		key.WithKeys("insert", "ctrl+shift+down"),
-		key.WithHelp("ins/C-S-down", "insert vertical block"),
+		key.WithHelp("ins/C-S-down", "insert block"),
 	),
-	DeleteBlockV: key.NewBinding(
+	DeleteBlock: key.NewBinding(
 		key.WithKeys("delete", "ctrl+shift+up"),
-		key.WithHelp("del/C-S-up", "delete vertical block"),
+		key.WithHelp("del/C-S-up", "delete block"),
 	),
-	BackspaceBlockV: key.NewBinding(
+	BackspaceBlock: key.NewBinding(
 		key.WithKeys("backspace"),
-		key.WithHelp("backspace", "delete upwards"),
-	),
-	InsertBlockH: key.NewBinding(
-		key.WithKeys("ctrl+shift+right"),
-		key.WithHelp("C-S-right", "insert horizontal block"),
-	),
-	DeleteBlockH: key.NewBinding(
-		key.WithKeys("ctrl+shift+left"),
-		key.WithHelp("C-S-left", "delete vertical block"),
+		key.WithHelp("backspace", "delete block above"),
 	),
 	Cut: key.NewBinding(
 		key.WithKeys("ctrl+x"),

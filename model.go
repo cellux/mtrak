@@ -279,6 +279,10 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					m.NextTrack()
 				case key.Matches(msg, m.keymap.PrevTrack):
 					m.PrevTrack()
+				case key.Matches(msg, m.keymap.InsertTrack):
+					m.InsertTrack()
+				case key.Matches(msg, m.keymap.DeleteTrack):
+					m.DeleteTrack()
 				case key.Matches(msg, m.keymap.DeleteBrush):
 					m.DeleteBrush()
 				case key.Matches(msg, m.keymap.IncBrushWidth):
@@ -297,16 +301,12 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					m.IncSelectionHeight()
 				case key.Matches(msg, m.keymap.DecSelectionHeight):
 					m.DecSelectionHeight()
-				case key.Matches(msg, m.keymap.InsertBlockV):
-					m.InsertBlockV()
-				case key.Matches(msg, m.keymap.DeleteBlockV):
-					m.DeleteBlockV(false)
-				case key.Matches(msg, m.keymap.BackspaceBlockV):
-					m.DeleteBlockV(true)
-				case key.Matches(msg, m.keymap.InsertBlockH):
-					m.InsertBlockH()
-				case key.Matches(msg, m.keymap.DeleteBlockH):
-					m.DeleteBlockH()
+				case key.Matches(msg, m.keymap.InsertBlock):
+					m.InsertBlock()
+				case key.Matches(msg, m.keymap.DeleteBlock):
+					m.DeleteBlock(false)
+				case key.Matches(msg, m.keymap.BackspaceBlock):
+					m.DeleteBlock(true)
 				case key.Matches(msg, m.keymap.Cut):
 					m.Cut()
 				case key.Matches(msg, m.keymap.Copy):
