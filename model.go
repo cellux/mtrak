@@ -44,6 +44,15 @@ func (m *Model) Reset() {
 	m.usingWideBrush = false
 }
 
+func (m *Model) SetMode(newMode Mode) {
+	m.prevmode = m.mode
+	m.mode = newMode
+}
+
+func (m *Model) ResetMode() {
+	m.mode = m.prevmode
+}
+
 func (m *Model) SetError(err error) {
 	m.err = err
 }
@@ -53,7 +62,6 @@ func (m *Model) CollapseBrush() {
 	m.brush.Y = m.editPos.Y
 	m.brush.W = 1
 	m.brush.H = 1
-	m.CollapseSelection()
 }
 
 func (m *Model) CollapseSelection() {
@@ -162,14 +170,6 @@ func (m *Model) Process(nframes uint32) int {
 	return 0
 }
 
-func makePattern(rowCount, trackCount int) Pattern {
-	rows := make([]Row, rowCount)
-	for i := range rowCount {
-		rows[i] = make([]MidiMessage, trackCount)
-	}
-	return rows
-}
-
 func (m *Model) Init() tea.Cmd {
 	m.keymap = &defaultKeyMap
 	m.midiEngine = &MidiEngine{}
@@ -211,21 +211,6 @@ func (m *Model) setDigit(b byte) {
 func (m *Model) insertDigit(b byte) {
 	m.setDigit(b)
 	m.Right()
-}
-
-func (m *Model) getBlock() Block {
-	p := m.song.Patterns[m.editPattern]
-	return p.getBlock(m.brush.Rect)
-}
-
-func (m *Model) setBlock(block Block) {
-	p := m.song.Patterns[m.editPattern]
-	p.setBlock(m.brush.Rect, block)
-}
-
-func (m *Model) zeroBlock() {
-	p := m.song.Patterns[m.editPattern]
-	p.zeroBlock(m.brush.Rect)
 }
 
 type MessageHandler func(m *Model, msg tea.Msg) (cmds []tea.Cmd)
@@ -283,8 +268,6 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					m.InsertTrack()
 				case key.Matches(msg, m.keymap.DeleteTrack):
 					m.DeleteTrack()
-				case key.Matches(msg, m.keymap.DeleteBrush):
-					m.DeleteBrush()
 				case key.Matches(msg, m.keymap.IncBrushWidth):
 					m.IncBrushWidth()
 				case key.Matches(msg, m.keymap.DecBrushWidth):
@@ -294,22 +277,36 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 				case key.Matches(msg, m.keymap.DecBrushHeight):
 					m.DecBrushHeight()
 				case key.Matches(msg, m.keymap.IncSelectionWidth):
+					m.SetMode(SelectMode)
 					m.IncSelectionWidth()
 				case key.Matches(msg, m.keymap.DecSelectionWidth):
+					m.SetMode(SelectMode)
 					m.DecSelectionWidth()
 				case key.Matches(msg, m.keymap.IncSelectionHeight):
+					m.applyWideBrush()
+					m.SetMode(SelectMode)
 					m.IncSelectionHeight()
 				case key.Matches(msg, m.keymap.DecSelectionHeight):
+					m.applyWideBrush()
+					m.SetMode(SelectMode)
 					m.DecSelectionHeight()
 				case key.Matches(msg, m.keymap.InsertBlock):
+					m.applyWideBrush()
 					m.InsertBlock()
 				case key.Matches(msg, m.keymap.DeleteBlock):
+					m.applyWideBrush()
 					m.DeleteBlock(false)
 				case key.Matches(msg, m.keymap.BackspaceBlock):
+					m.applyWideBrush()
 					m.DeleteBlock(true)
+				case key.Matches(msg, m.keymap.ZeroBlock):
+					m.applyWideBrush()
+					m.ZeroBlock()
 				case key.Matches(msg, m.keymap.Cut):
+					m.applyWideBrush()
 					m.Cut()
 				case key.Matches(msg, m.keymap.Copy):
+					m.applyWideBrush()
 					m.Copy()
 				case key.Matches(msg, m.keymap.Paste):
 					m.Paste()
@@ -330,6 +327,45 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 		}
 		return cmds
 	},
+	SelectMode: func(m *Model, msg tea.Msg) (cmds []tea.Cmd) {
+		leaveSelectMode := false
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch {
+			case key.Matches(msg, m.keymap.IncSelectionWidth):
+				m.IncSelectionWidth()
+			case key.Matches(msg, m.keymap.DecSelectionWidth):
+				m.DecSelectionWidth()
+			case key.Matches(msg, m.keymap.IncSelectionHeight):
+				m.IncSelectionHeight()
+			case key.Matches(msg, m.keymap.DecSelectionHeight):
+				m.DecSelectionHeight()
+			case key.Matches(msg, m.keymap.InsertBlock):
+				m.InsertBlock()
+			case key.Matches(msg, m.keymap.DeleteBlock):
+				m.DeleteBlock(false)
+			case key.Matches(msg, m.keymap.BackspaceBlock):
+				m.DeleteBlock(true)
+			case key.Matches(msg, m.keymap.ZeroBlock):
+				m.ZeroBlock()
+			case key.Matches(msg, m.keymap.Cut):
+				m.Cut()
+			case key.Matches(msg, m.keymap.Copy):
+				m.Copy()
+			default:
+				leaveSelectMode = true
+			}
+		default:
+			leaveSelectMode = true
+		}
+		if leaveSelectMode {
+			m.revertWideBrush()
+			m.CollapseSelection()
+			m.ResetMode()
+			m.msgs <- msg
+		}
+		return cmds
+	},
 	CommandMode: func(m *Model, msg tea.Msg) (cmds []tea.Cmd) {
 		var cmd tea.Cmd
 		m.commandModel, cmd = m.commandModel.Update(msg)
@@ -341,9 +377,9 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 				m.ExecuteCommand(command)
 				fallthrough
 			case "esc":
-				m.mode = m.prevmode
 				m.commandModel.Blur()
 				m.commandModel.Reset()
+				m.ResetMode()
 			}
 		}
 		return cmds
@@ -369,7 +405,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc":
 			m.err = nil
+			m.ResetMode()
 			m.CollapseBrush()
+			m.CollapseSelection()
 		}
 	case tea.WindowSizeMsg:
 		m.windowSize.W = msg.Width

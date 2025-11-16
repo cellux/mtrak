@@ -4,6 +4,14 @@ import (
 	"slices"
 )
 
+func makePattern(rowCount, trackCount int) Pattern {
+	rows := make([]Row, rowCount)
+	for i := range rowCount {
+		rows[i] = make([]MidiMessage, trackCount)
+	}
+	return rows
+}
+
 func (p *Pattern) clone() Pattern {
 	clone := make(Pattern, len(*p))
 	for rowIndex := 0; rowIndex < len(*p); rowIndex++ {

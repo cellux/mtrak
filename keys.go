@@ -20,7 +20,6 @@ type KeyMap struct {
 	PrevTrack          key.Binding
 	InsertTrack        key.Binding
 	DeleteTrack        key.Binding
-	DeleteBrush        key.Binding
 	IncBrushWidth      key.Binding
 	DecBrushWidth      key.Binding
 	IncBrushHeight     key.Binding
@@ -31,6 +30,7 @@ type KeyMap struct {
 	DecSelectionHeight key.Binding
 	InsertBlock        key.Binding
 	DeleteBlock        key.Binding
+	ZeroBlock          key.Binding
 	BackspaceBlock     key.Binding
 	PlayOrStop         key.Binding
 	Cut                key.Binding
@@ -104,10 +104,6 @@ var defaultKeyMap = KeyMap{
 		key.WithKeys("ctrl+shift+left"),
 		key.WithHelp("C-S-left", "delete track"),
 	),
-	DeleteBrush: key.NewBinding(
-		key.WithKeys("."),
-		key.WithHelp(".", "delete area under brush"),
-	),
 	IncBrushWidth: key.NewBinding(
 		key.WithKeys("ctrl+right"),
 		key.WithHelp("C-right", "increase brush width"),
@@ -147,6 +143,10 @@ var defaultKeyMap = KeyMap{
 	DeleteBlock: key.NewBinding(
 		key.WithKeys("delete", "ctrl+shift+up"),
 		key.WithHelp("del/C-S-up", "delete block"),
+	),
+	ZeroBlock: key.NewBinding(
+		key.WithKeys("."),
+		key.WithHelp(".", "fill selection with zeroes"),
 	),
 	BackspaceBlock: key.NewBinding(
 		key.WithKeys("backspace"),

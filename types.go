@@ -53,7 +53,8 @@ type Mode int
 
 const (
 	EditMode    Mode = 0
-	CommandMode Mode = 1
+	SelectMode  Mode = 1
+	CommandMode Mode = 2
 )
 
 type Model struct {
