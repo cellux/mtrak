@@ -228,30 +228,10 @@ func (m *Model) zeroBlock() {
 	p.zeroBlock(m.brush.Rect)
 }
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	var cmd tea.Cmd
-	switch msg := msg.(type) {
-	case Action:
-		if msg.undoFn != nil {
-			m.undoableActions = append(m.undoableActions, msg)
-			if len(m.undoableActions) > MaxUndoableActions {
-				m.undoableActions = m.undoableActions[len(m.undoableActions)-MaxUndoableActions:]
-			}
-		}
-		return m, nil
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			m.err = nil
-			m.CollapseBrush()
-		}
-	case tea.WindowSizeMsg:
-		m.windowSize.W = msg.Width
-		m.windowSize.H = msg.Height
-	}
-	switch m.mode {
-	case EditMode:
+type MessageHandler func(m *Model, msg tea.Msg) (cmds []tea.Cmd)
+
+var modeSpecificMessageHandlers = map[Mode]MessageHandler{
+	EditMode: func(m *Model, msg tea.Msg) (cmds []tea.Cmd) {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch msg.String() {
@@ -348,7 +328,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-	case CommandMode:
+		return cmds
+	},
+	CommandMode: func(m *Model, msg tea.Msg) (cmds []tea.Cmd) {
+		var cmd tea.Cmd
 		m.commandModel, cmd = m.commandModel.Update(msg)
 		cmds = append(cmds, cmd)
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
@@ -363,7 +346,36 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.commandModel.Reset()
 			}
 		}
+		return cmds
+	},
+}
+
+func (m *Model) HandleMessage(msg tea.Msg) (cmds []tea.Cmd) {
+	return modeSpecificMessageHandlers[m.mode](m, msg)
+}
+
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	switch msg := msg.(type) {
+	case Action:
+		if msg.undoFn != nil {
+			m.undoableActions = append(m.undoableActions, msg)
+			if len(m.undoableActions) > MaxUndoableActions {
+				m.undoableActions = m.undoableActions[len(m.undoableActions)-MaxUndoableActions:]
+			}
+		}
+		return m, nil
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			m.err = nil
+			m.CollapseBrush()
+		}
+	case tea.WindowSizeMsg:
+		m.windowSize.W = msg.Width
+		m.windowSize.H = msg.Height
 	}
+	cmds = append(cmds, m.HandleMessage(msg)...)
 	return m, tea.Batch(cmds...)
 }
 

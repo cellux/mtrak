@@ -5,7 +5,6 @@ import (
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"os"
-	//"github.com/lucasb-eyer/go-colorful"
 )
 
 var program *tea.Program
