@@ -122,7 +122,7 @@ func (m *Model) moveBrush(dx, dy int) {
 			}
 		}
 	}
-	m.revertDefaultBrush()
+	m.revertWideBrush()
 	m.CollapseSelection()
 }
 
@@ -304,24 +304,24 @@ func (m *Model) DecSelectionWidth() {
 	}
 }
 
-func (m *Model) applyDefaultBrush() {
+func (m *Model) applyWideBrush() {
 	if m.brush.W == 1 && m.sel.W == 1 {
 		for m.brush.W < 6 {
 			m.stepBrushWidth(1)
 		}
-		m.defaultBrush = true
+		m.usingWideBrush = true
 	}
 }
 
-func (m *Model) revertDefaultBrush() {
-	if m.defaultBrush {
+func (m *Model) revertWideBrush() {
+	if m.usingWideBrush {
 		m.CollapseBrush()
-		m.defaultBrush = false
+		m.usingWideBrush = false
 	}
 }
 
 func (m *Model) IncSelectionHeight() {
-	m.applyDefaultBrush()
+	m.applyWideBrush()
 	sel := m.sel
 	if m.sel.Y+m.sel.H == m.brush.Y+m.brush.H {
 		// brush is at bottom side of current selection
@@ -337,7 +337,7 @@ func (m *Model) IncSelectionHeight() {
 }
 
 func (m *Model) DecSelectionHeight() {
-	m.applyDefaultBrush()
+	m.applyWideBrush()
 	sel := m.sel
 	if m.sel.Y == m.brush.Y {
 		// brush os at top side of current selection
@@ -353,7 +353,7 @@ func (m *Model) DecSelectionHeight() {
 }
 
 func (m *Model) InsertBlockV() {
-	m.applyDefaultBrush()
+	m.applyWideBrush()
 	p := m.song.Patterns[m.editPattern]
 	clone := p.clone()
 	patternHeight := len(p)
@@ -379,7 +379,7 @@ func (m *Model) DeleteBlockV(backspace bool) {
 	if backspace && m.sel.Y < m.sel.H {
 		return
 	}
-	m.applyDefaultBrush()
+	m.applyWideBrush()
 	p := m.song.Patterns[m.editPattern]
 	clone := p.clone()
 	patternHeight := len(p)
@@ -477,7 +477,7 @@ func (m *Model) DeleteBlockH() {
 }
 
 func (m *Model) Cut() {
-	m.applyDefaultBrush()
+	m.applyWideBrush()
 	p := m.song.Patterns[m.editPattern]
 	sel := m.sel
 	block := p.getBlock(sel)
@@ -495,7 +495,7 @@ func (m *Model) Cut() {
 }
 
 func (m *Model) Copy() {
-	m.applyDefaultBrush()
+	m.applyWideBrush()
 	p := m.song.Patterns[m.editPattern]
 	sel := m.sel
 	block := p.getBlock(sel)
