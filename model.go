@@ -360,6 +360,10 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 				m.Cut()
 			case key.Matches(msg, m.keymap.Copy):
 				m.Copy()
+			case key.Matches(msg, m.keymap.Undo):
+				m.Undo()
+			case key.Matches(msg, m.keymap.Redo):
+				m.Redo()
 			default:
 				leaveSelectMode = true
 			}
