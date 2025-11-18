@@ -11,11 +11,20 @@ type (
 	Pattern     []Row
 )
 
+type (
+	Scale         = []int
+	ScaleRegistry = map[string]Scale
+)
+
 type Song struct {
-	BPM      int       `json:"bpm"` // beats per minute
-	LPB      int       `json:"lpb"` // lines per beat
-	TPL      int       `json:"tpl"` // ticks per line
-	Patterns []Pattern `json:"patterns"`
+	BPM       int       `json:"bpm"` // beats per minute
+	LPB       int       `json:"lpb"` // lines per beat
+	TPL       int       `json:"tpl"` // ticks per line
+	Patterns  []Pattern `json:"patterns"`
+	Root      int       `json:"root"`      // root note
+	Scale     Scale     `json:"scale"`     // semitone offsets for each degree of the scale
+	Mode      int       `json:"mode"`      // offset of degree 0 within the scale
+	Chromatic bool      `json:"chromatic"` // note mode uses chromatic scale?
 }
 
 type Point struct {
@@ -54,38 +63,40 @@ type Mode int
 const (
 	EditMode    Mode = 0
 	SelectMode  Mode = 1
-	CommandMode Mode = 2
+	NoteMode    Mode = 2
+	CommandMode Mode = 3
 )
 
 type Model struct {
-	err               error
-	keymap            *KeyMap
-	mode              Mode
-	prevmode          Mode
-	windowSize        Size
-	midiEngine        *MidiEngine
-	song              *Song
-	brush             Brush
-	sel               Rect
-	editPattern       int
-	editPos           Point
-	firstVisibleRow   int
-	firstVisibleTrack int
-	playPattern       int
-	playRow           int
-	playTick          int
-	playFrame         uint64
-	isPlaying         bool
-	playFromRow       int
-	commandModel      textinput.Model
-	filename          string
-	pendingActions    chan Action
-	msgs              chan tea.Msg
-	undoableActions   []Action
-	undoneActions     []Action
-	clipboard         Block
-	pasteOffset       int
-	usingWideBrush    bool
+	err                 error
+	keymap              *KeyMap
+	mode                Mode
+	prevmode            Mode
+	windowSize          Size
+	midiEngine          *MidiEngine
+	song                *Song
+	brush               Brush
+	sel                 Rect
+	editPattern         int
+	editPos             Point
+	firstVisibleRow     int
+	firstVisibleTrack   int
+	playPattern         int
+	playRow             int
+	playTick            int
+	playFrame           uint64
+	isPlaying           bool
+	playFromRow         int
+	commandModel        textinput.Model
+	filename            string
+	pendingActions      chan Action
+	pendingMidiMessages chan MidiMessage
+	msgs                chan tea.Msg
+	undoableActions     []Action
+	undoneActions       []Action
+	clipboard           Block
+	pasteOffset         int
+	usingWideBrush      bool
 }
 
 type (

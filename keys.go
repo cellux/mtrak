@@ -37,7 +37,9 @@ type KeyMap struct {
 	Copy               key.Binding
 	Paste              key.Binding
 	SetPlayFromRow     key.Binding
-	EnterCommand       key.Binding
+	EnterCommandMode   key.Binding
+	EnterNoteMode      key.Binding
+	EnterChromaticMode key.Binding
 	Undo               key.Binding
 	Redo               key.Binding
 	Save               key.Binding
@@ -172,9 +174,17 @@ var defaultKeyMap = KeyMap{
 		key.WithKeys("s", "alt+ "),
 		key.WithHelp("s/M-space", "set play from row"),
 	),
-	EnterCommand: key.NewBinding(
+	EnterCommandMode: key.NewBinding(
 		key.WithKeys(":"),
 		key.WithHelp(":", "enter command"),
+	),
+	EnterNoteMode: key.NewBinding(
+		key.WithKeys("n"),
+		key.WithHelp("n", "note mode"),
+	),
+	EnterChromaticMode: key.NewBinding(
+		key.WithKeys("shift+n"),
+		key.WithHelp("S-n", "chromatic mode"),
 	),
 	Undo: key.NewBinding(
 		key.WithKeys("ctrl+z"),

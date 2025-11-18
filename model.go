@@ -12,6 +12,17 @@ var defaultBrush = Brush{
 	ExpandDir: Point{1, 1},
 }
 
+func drain[T any](ch chan T) {
+	for {
+		select {
+		case <-ch:
+			// keep draining
+		default:
+			return // channel is empty
+		}
+	}
+}
+
 func (m *Model) Reset() {
 	m.err = nil
 	//m.keymap = ?
@@ -36,6 +47,7 @@ func (m *Model) Reset() {
 	m.commandModel.Reset()
 	//m.filename
 	//m.pendingActions ?
+	drain(m.pendingMidiMessages)
 	//m.msgs ?
 	m.undoableActions = nil
 	m.undoneActions = nil
@@ -134,12 +146,26 @@ func (m *Model) Process(nframes uint32) int {
 	m.processPendingActions()
 	outPort := m.midiEngine.outPort
 	buf := outPort.MidiClearBuffer(nframes)
+	var midiData MidiData
+processPendingMidiMessages:
+	for {
+		select {
+		case msg := <-m.pendingMidiMessages:
+			status := msg[0]
+			if status >= 0x80 {
+				midiData.Time = 0
+				midiData.Buffer = msg.bytes()
+				outPort.MidiEventWrite(&midiData, buf)
+			}
+		default:
+			break processPendingMidiMessages
+		}
+	}
 	if !m.isPlaying {
 		m.playFrame += uint64(nframes)
 		return 0
 	}
 	framesPerTick := uint64(m.GetFramesPerTick())
-	var midiData MidiData
 	p := m.song.Patterns[m.playPattern]
 	for i := range nframes {
 		if m.playFrame%framesPerTick == 0 {
@@ -182,9 +208,11 @@ func (m *Model) Init() tea.Cmd {
 		TPL:      6,
 		Patterns: make([]Pattern, 1, 256),
 	}
+	FixSong(m.song)
 	m.song.Patterns[0] = makePattern(64, 16)
 	m.commandModel = textinput.New()
 	m.pendingActions = make(chan Action, 64)
+	m.pendingMidiMessages = make(chan MidiMessage, 64)
 	m.msgs = make(chan tea.Msg, 64)
 	m.Reset()
 	go func() {
@@ -211,6 +239,21 @@ func (m *Model) setDigit(b byte) {
 func (m *Model) insertDigit(b byte) {
 	m.setDigit(b)
 	m.Right()
+}
+
+func (m *Model) getNoteByte() byte {
+	p := m.song.Patterns[m.editPattern]
+	noteOffset := m.editPos.X - m.editPos.X%6 + 2
+	hi := p.getDigit(noteOffset, m.editPos.Y)
+	lo := p.getDigit(noteOffset+1, m.editPos.Y)
+	return hi<<4 + lo
+}
+
+func (m *Model) setNoteByte(midiNote byte) {
+	p := m.song.Patterns[m.editPattern]
+	noteOffset := m.editPos.X - m.editPos.X%6 + 2
+	p.setDigit(noteOffset, m.editPos.Y, midiNote>>4)
+	p.setDigit(noteOffset+1, m.editPos.Y, midiNote&0x0f)
 }
 
 type MessageHandler func(m *Model, msg tea.Msg) (cmds []tea.Cmd)
@@ -314,8 +357,74 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					m.PlayOrStop()
 				case key.Matches(msg, m.keymap.SetPlayFromRow):
 					m.SetPlayFromRow()
-				case key.Matches(msg, m.keymap.EnterCommand):
-					m.EnterCommand()
+				case key.Matches(msg, m.keymap.EnterCommandMode):
+					m.EnterCommandMode()
+				case key.Matches(msg, m.keymap.EnterNoteMode):
+					m.EnterNoteMode()
+				case key.Matches(msg, m.keymap.EnterChromaticMode):
+					m.EnterChromaticMode()
+				case key.Matches(msg, m.keymap.Undo):
+					m.Undo()
+				case key.Matches(msg, m.keymap.Redo):
+					m.Redo()
+				case key.Matches(msg, m.keymap.Save):
+					m.SaveSong()
+				}
+			}
+		}
+		return cmds
+	},
+	NoteMode: func(m *Model, msg tea.Msg) (cmds []tea.Cmd) {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			midiNote := m.KeyMsgToMidiNote(msg)
+			if midiNote >= 0 {
+				prevNote := m.getNoteByte()
+				m.submitAction(
+					func() {
+						m.setNoteByte(byte(midiNote))
+					},
+					func() {
+						m.setNoteByte(prevNote)
+					},
+				)
+				m.pendingMidiMessages <- MidiMessage{0x90, byte(midiNote), 0x70}
+			} else {
+				switch {
+				case key.Matches(msg, m.keymap.Quit):
+					cmds = append(cmds, tea.Quit)
+				case key.Matches(msg, m.keymap.Up):
+					m.Up()
+				case key.Matches(msg, m.keymap.Down):
+					m.Down()
+				case key.Matches(msg, m.keymap.PageUp):
+					m.PageUp()
+				case key.Matches(msg, m.keymap.PageDown):
+					m.PageDown()
+				case key.Matches(msg, m.keymap.JumpToFirstRow):
+					m.JumpToFirstRow()
+				case key.Matches(msg, m.keymap.JumpToLastRow):
+					m.JumpToLastRow()
+				case key.Matches(msg, m.keymap.Left):
+					m.PrevTrack()
+				case key.Matches(msg, m.keymap.Right):
+					m.NextTrack()
+				case key.Matches(msg, m.keymap.NextTrack):
+					m.NextTrack()
+				case key.Matches(msg, m.keymap.PrevTrack):
+					m.PrevTrack()
+				case key.Matches(msg, m.keymap.InsertTrack):
+					m.InsertTrack()
+				case key.Matches(msg, m.keymap.DeleteTrack):
+					m.DeleteTrack()
+				case key.Matches(msg, m.keymap.ZeroBlock):
+					m.setNoteByte(0)
+				case key.Matches(msg, m.keymap.PlayOrStop):
+					m.PlayOrStop()
+				case key.Matches(msg, m.keymap.SetPlayFromRow):
+					m.SetPlayFromRow()
+				case key.Matches(msg, m.keymap.EnterChromaticMode):
+					m.song.Chromatic = !m.song.Chromatic
 				case key.Matches(msg, m.keymap.Undo):
 					m.Undo()
 				case key.Matches(msg, m.keymap.Redo):

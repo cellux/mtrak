@@ -27,6 +27,8 @@ type Colors struct {
 	playText colorful.Color
 	beatFill colorful.Color
 	beatText colorful.Color
+	noteFill colorful.Color
+	noteText colorful.Color
 
 	errorFill colorful.Color
 	errorText colorful.Color
@@ -40,9 +42,10 @@ const (
 	selectBit = 4
 	playBit   = 8
 	beatBit   = 16
+	noteBit   = 32
 )
 
-var patternPalette [32]lipgloss.Style
+var patternPalette [64]lipgloss.Style
 
 type Styles struct {
 	chrome      lipgloss.Style
@@ -86,6 +89,8 @@ func init() {
 	colors.playText = colors.cursorText
 	colors.beatFill = colorful.Hcl(40, 0.10, 0.20)
 	colors.beatText = colors.cursorText
+	colors.noteFill = colorful.Hcl(70, 0.12, 0.40)
+	colors.noteText = colors.cursorText
 
 	colors.errorFill = colorful.Hcl(25, 0.14, 0.40)
 	colors.errorText = colorful.Hcl(25, 0.14, 0.66)
@@ -97,13 +102,13 @@ func init() {
 			text = text.BlendHcl(colors.cursorText, 0.5)
 			fill = fill.BlendHcl(colors.cursorFill, 0.5)
 		}
-		if i&selectBit > 0 {
-			text = text.BlendHcl(colors.selectText, 0.5)
-			fill = fill.BlendHcl(colors.selectFill, 0.5)
-		}
 		if i&brushBit > 0 {
 			text = text.BlendHcl(colors.brushText, 0.5)
 			fill = fill.BlendHcl(colors.brushFill, 0.5)
+		}
+		if i&selectBit > 0 {
+			text = text.BlendHcl(colors.selectText, 0.5)
+			fill = fill.BlendHcl(colors.selectFill, 0.5)
 		}
 		if i&playBit > 0 {
 			text = text.BlendHcl(colors.playText, 0.5)
@@ -112,6 +117,10 @@ func init() {
 		if i&beatBit > 0 {
 			text = text.BlendHcl(colors.beatText, 0.5)
 			fill = fill.BlendHcl(colors.beatFill, 0.5)
+		}
+		if i&noteBit > 0 {
+			text = text.BlendHcl(colors.noteText, 0.5)
+			fill = fill.BlendHcl(colors.noteFill, 0.5)
 		}
 		patternPalette[i] = lipgloss.Style{}.Foreground(LGC(text)).Background(LGC(fill))
 	}
@@ -184,14 +193,6 @@ func (m *Model) HeaderView() string {
 	rb.WriteString("TPL:")
 	rb.SetStyle(&styles.headerValue)
 	rb.WriteString(fmt.Sprintf("%d", m.song.TPL))
-	rb.WriteByte(' ')
-	rb.SetStyle(&styles.headerLabel)
-	rb.WriteString("BRU:")
-	rb.SetStyle(&styles.headerValue)
-	rb.WriteString(fmt.Sprintf("(%d,%d)",
-		m.brush.W,
-		m.brush.H,
-	))
 	return rb.String()
 }
 
@@ -242,6 +243,7 @@ func (m *Model) PatternView(r Rect) string {
 	}
 	var rb RowBuilder
 	rowStrings := make([]string, 0, patternHeight)
+	editTrackBegin := m.editPos.X - m.editPos.X%trackWidth
 	for y := m.firstVisibleRow; y < min(numPatternRows, m.firstVisibleRow+patternHeight); y++ {
 		row := p[y]
 		rb.SetStyle(&styles.patternNum)
@@ -261,25 +263,35 @@ func (m *Model) PatternView(r Rect) string {
 				rb.WriteByte(' ')
 			}
 			msg := row[t]
+			x0 := x
 			for i := range 3 {
 				for j := range 2 {
 					cellStyleIndex := rowStyleIndex
-					if y == m.editPos.Y && x == m.editPos.X {
-						cellStyleIndex |= cursorBit
-					}
-					insideBrush := x >= m.brush.X &&
-						y >= m.brush.Y &&
-						x < (m.brush.X+m.brush.W) &&
-						y < (m.brush.Y+m.brush.H)
-					if insideBrush {
-						cellStyleIndex |= brushBit
-					}
-					insideSelection := x >= m.sel.X &&
-						y >= m.sel.Y &&
-						x < (m.sel.X+m.sel.W) &&
-						y < (m.sel.Y+m.sel.H)
-					if insideSelection {
-						cellStyleIndex |= selectBit
+					if m.mode == NoteMode {
+						if i == 1 && x0 == editTrackBegin {
+							cellStyleIndex |= noteBit
+							if y == m.editPos.Y {
+								cellStyleIndex |= cursorBit
+							}
+						}
+					} else {
+						if y == m.editPos.Y && x == m.editPos.X {
+							cellStyleIndex |= cursorBit
+						}
+						insideBrush := x >= m.brush.X &&
+							y >= m.brush.Y &&
+							x < (m.brush.X+m.brush.W) &&
+							y < (m.brush.Y+m.brush.H)
+						if insideBrush {
+							cellStyleIndex |= brushBit
+						}
+						insideSelection := x >= m.sel.X &&
+							y >= m.sel.Y &&
+							x < (m.sel.X+m.sel.W) &&
+							y < (m.sel.Y+m.sel.H)
+						if insideSelection {
+							cellStyleIndex |= selectBit
+						}
 					}
 					rb.SetStyle(&patternPalette[cellStyleIndex])
 					b := msg[i]

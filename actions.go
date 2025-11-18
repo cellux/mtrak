@@ -550,9 +550,28 @@ func (m *Model) SetPlayFromRow() {
 	)
 }
 
-func (m *Model) EnterCommand() {
+func (m *Model) EnterCommandMode() {
 	m.SetMode(CommandMode)
 	m.commandModel.Focus()
+}
+
+func (m *Model) EnterNoteMode() {
+	m.SetMode(NoteMode)
+	m.song.Chromatic = false
+}
+
+func (m *Model) EnterChromaticMode() {
+	m.SetMode(NoteMode)
+	m.song.Chromatic = true
+}
+
+func FixSong(song *Song) {
+	if song.Root == 0 {
+		song.Root = 60
+	}
+	if song.Scale == nil {
+		song.Scale = scales["major"]
+	}
 }
 
 func (m *Model) LoadSong() {
@@ -569,6 +588,7 @@ func (m *Model) LoadSong() {
 		m.SetError(err)
 		return
 	}
+	FixSong(song)
 	m.submitAction(
 		func() {
 			m.SetSong(song)
