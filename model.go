@@ -422,6 +422,12 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 				if msg[2] == 0 && defaults[2] != 0 {
 					msg[2] = defaults[2]
 				}
+				if msg[0] == 0 {
+					msg[0] = 0x90
+				}
+				if msg[2] == 0 {
+					msg[2] = 0x70
+				}
 				m.pendingMidiMessages <- msg
 			} else {
 				switch {
