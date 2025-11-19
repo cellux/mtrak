@@ -8,23 +8,29 @@ import (
 type (
 	MidiMessage [3]byte
 	Row         []MidiMessage
-	Pattern     []Row
 )
 
+type Pattern struct {
+	Rows          []Row `json:"rows"`
+	NumRows       int   `json:"numRows"`
+	NumTracks     int   `json:"numTracks"`
+	TrackDefaults Row   `json:"trackDefaults"`
+}
+
 type (
-	Scale         = []int
-	ScaleRegistry = map[string]Scale
+	Scale         []int
+	ScaleRegistry map[string]Scale
 )
 
 type Song struct {
-	BPM       int       `json:"bpm"` // beats per minute
-	LPB       int       `json:"lpb"` // lines per beat
-	TPL       int       `json:"tpl"` // ticks per line
-	Patterns  []Pattern `json:"patterns"`
-	Root      int       `json:"root"`      // root note
-	Scale     Scale     `json:"scale"`     // semitone offsets for each degree of the scale
-	Mode      int       `json:"mode"`      // offset of degree 0 within the scale
-	Chromatic bool      `json:"chromatic"` // note mode uses chromatic scale?
+	BPM       int        `json:"bpm"` // beats per minute
+	LPB       int        `json:"lpb"` // lines per beat
+	TPL       int        `json:"tpl"` // ticks per line
+	Patterns  []*Pattern `json:"patterns"`
+	Root      int        `json:"root"`      // root note
+	Scale     Scale      `json:"scale"`     // semitone offsets for each degree of the scale
+	Mode      int        `json:"mode"`      // offset of degree 0 within the scale
+	Chromatic bool       `json:"chromatic"` // note mode uses chromatic scale?
 }
 
 type Point struct {

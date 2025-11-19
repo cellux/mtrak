@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -69,29 +68,20 @@ func (m *Model) ExecuteCommand(command string) {
 		}
 	case "rows":
 		if len(items) > 1 {
-			rows, err := parseInt(items[1])
+			numRows, err := parseInt(items[1])
 			if err != nil {
 				m.SetError(err)
 				return
 			}
 			p := m.song.Patterns[m.editPattern]
-			if rows == len(p) {
+			if numRows == p.NumRows {
 				return
 			}
-			if rows < 1 {
-				m.SetError(fmt.Errorf("invalid row count: %d", rows))
+			if numRows < 1 {
+				m.SetError(fmt.Errorf("invalid row count: %d", numRows))
 				return
 			}
-			clone := p.clone()
-			if rows < len(clone) {
-				clone = clone[:rows]
-			} else {
-				clone = slices.Grow(clone, rows-len(p))
-				trackCount := len(p[0])
-				for i := 0; i < rows-len(p); i++ {
-					clone = append(clone, make([]MidiMessage, trackCount))
-				}
-			}
+			clone := p.withNumRows(numRows)
 			m.submitAction(
 				func() {
 					m.ReplaceEditPattern(clone)
@@ -103,33 +93,20 @@ func (m *Model) ExecuteCommand(command string) {
 		}
 	case "tracks":
 		if len(items) > 1 {
-			tracks, err := parseInt(items[1])
+			numTracks, err := parseInt(items[1])
 			if err != nil {
 				m.SetError(err)
 				return
 			}
 			p := m.song.Patterns[m.editPattern]
-			currentTrackCount := len(p[0])
-			if tracks == currentTrackCount {
+			if numTracks == p.NumTracks {
 				return
 			}
-			if tracks < 1 {
-				m.SetError(fmt.Errorf("invalid track count: %d", tracks))
+			if numTracks < 1 {
+				m.SetError(fmt.Errorf("invalid track count: %d", numTracks))
 				return
 			}
-			clone := p.clone()
-			if tracks < currentTrackCount {
-				for i := range len(clone) {
-					clone[i] = clone[i][:tracks]
-				}
-			} else {
-				for i := range len(clone) {
-					clone[i] = slices.Grow(clone[i], tracks-currentTrackCount)
-					for j := 0; j < tracks-currentTrackCount; j++ {
-						clone[i] = append(clone[i], MidiMessage{})
-					}
-				}
-			}
+			clone := p.withNumTracks(numTracks)
 			m.submitAction(
 				func() {
 					m.ReplaceEditPattern(clone)

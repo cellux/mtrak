@@ -198,9 +198,8 @@ func (m *Model) HeaderView() string {
 
 func (m *Model) PatternView(r Rect) string {
 	p := m.song.Patterns[m.editPattern]
-	numPatternRows := len(p)
-	editRow := p[m.editPos.Y]
-	numPatternTracks := len(editRow)
+	numPatternRows := p.NumRows
+	numPatternTracks := p.NumTracks
 	patternHeight := r.H
 	patternHeight -= 2 // borders
 	patternWidth := r.W
@@ -245,7 +244,7 @@ func (m *Model) PatternView(r Rect) string {
 	rowStrings := make([]string, 0, patternHeight)
 	editTrackBegin := m.editPos.X - m.editPos.X%trackWidth
 	for y := m.firstVisibleRow; y < min(numPatternRows, m.firstVisibleRow+patternHeight); y++ {
-		row := p[y]
+		row := p.Rows[y]
 		rb.SetStyle(&styles.patternNum)
 		rb.WriteString(fmt.Sprintf("%04X", y))
 		rb.WriteByte(' ')

@@ -33,7 +33,7 @@ func (m *Model) Reset() {
 	//m.song
 	m.brush = defaultBrush
 	m.sel = m.brush.Rect
-	m.editPattern = 0
+	//m.editPattern
 	m.editPos.X = 0
 	m.editPos.Y = 0
 	m.firstVisibleRow = 0
@@ -83,9 +83,10 @@ func (m *Model) CollapseSelection() {
 func (m *Model) SetSong(song *Song) {
 	m.Reset()
 	m.song = song
+	m.fix()
 }
 
-func (m *Model) ReplaceEditPattern(p Pattern) {
+func (m *Model) ReplaceEditPattern(p *Pattern) {
 	m.song.Patterns[m.editPattern] = p
 	m.fix()
 }
@@ -170,20 +171,28 @@ processPendingMidiMessages:
 	for i := range nframes {
 		if m.playFrame%framesPerTick == 0 {
 			if m.playTick == 0 {
-				row := p[m.playRow]
-				for _, msg := range row {
-					status := msg[0]
-					if status >= 0x80 {
+				row := p.Rows[m.playRow]
+				for numTrack, msg := range row {
+					if msg[0] == 0 && (msg[1] != 0 || msg[2] != 0) {
+						defaults := p.TrackDefaults[numTrack]
+						for j := range 3 {
+							if msg[j] == 0 {
+								msg[j] = defaults[j]
+							}
+						}
+					}
+					if msg[0] >= 0x80 {
 						midiData.Time = i
 						midiData.Buffer = msg.bytes()
 						outPort.MidiEventWrite(&midiData, buf)
+						p.TrackDefaults[numTrack] = msg
 					}
 				}
 			}
 			m.playTick++
 			if m.playTick >= m.song.TPL {
 				m.playRow++
-				if m.playRow == len(p) {
+				if m.playRow == p.NumRows {
 					// TODO: advance to next pattern in sequence
 					m.playRow = 0
 				}
@@ -206,10 +215,10 @@ func (m *Model) Init() tea.Cmd {
 		BPM:      120,
 		LPB:      4,
 		TPL:      6,
-		Patterns: make([]Pattern, 1, 256),
+		Patterns: make([]*Pattern, 1, 256),
 	}
 	FixSong(m.song)
-	m.song.Patterns[0] = makePattern(64, 16)
+	m.song.Patterns[0] = makeDefaultPattern()
 	m.commandModel = textinput.New()
 	m.pendingActions = make(chan Action, 64)
 	m.pendingMidiMessages = make(chan MidiMessage, 64)
@@ -388,7 +397,26 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 						m.setNoteByte(prevNote)
 					},
 				)
-				m.pendingMidiMessages <- MidiMessage{0x90, byte(midiNote), 0x70}
+				msg := MidiMessage{0, byte(midiNote), 0}
+				p := m.song.Patterns[m.editPattern]
+				numTrack := m.editPos.X / 6
+				for y := m.editPos.Y; y >= 0 && msg[0] == 0 && msg[2] == 0; y-- {
+					ymsg := p.Rows[y][numTrack]
+					if msg[0] == 0 && ymsg[0] != 0 {
+						msg[0] = 0x90 + ymsg[0]&0x0f
+					}
+					if msg[2] == 0 && ymsg[2] != 0 {
+						msg[2] = ymsg[2]
+					}
+				}
+				defaults := p.TrackDefaults[numTrack]
+				if msg[0] == 0 && defaults[0] != 0 {
+					msg[0] = 0x90 + defaults[0]&0x0f
+				}
+				if msg[2] == 0 && defaults[2] != 0 {
+					msg[2] = defaults[2]
+				}
+				m.pendingMidiMessages <- msg
 			} else {
 				switch {
 				case key.Matches(msg, m.keymap.Quit):

@@ -21,7 +21,7 @@ func (m *Model) fix() {
 	}
 
 	p := patterns[m.editPattern]
-	patternHeight := len(p)
+	patternHeight := p.Height()
 
 	if m.editPos.Y < 0 {
 		m.editPos.Y = 0
@@ -33,8 +33,7 @@ func (m *Model) fix() {
 		m.playFromRow = 0
 	}
 
-	editRow := p[m.editPos.Y]
-	patternWidth := len(editRow) * 6
+	patternWidth := p.Width()
 
 	if m.editPos.X < 0 {
 		m.editPos.X = 0
@@ -88,8 +87,7 @@ func (m *Model) fix() {
 func (m *Model) moveBrush(dx, dy int) {
 	p := m.song.Patterns[m.editPattern]
 	if dx != 0 {
-		editRow := p[m.editPos.Y]
-		patternWidth := len(editRow) * 6
+		patternWidth := p.Width()
 		if dx > 0 {
 			if m.brush.X+dx+m.brush.W <= patternWidth {
 				m.brush.X += dx
@@ -107,7 +105,7 @@ func (m *Model) moveBrush(dx, dy int) {
 		}
 	}
 	if dy != 0 {
-		patternHeight := len(p)
+		patternHeight := p.Height()
 		if dy > 0 {
 			if m.brush.Y+dy+m.brush.H <= patternHeight {
 				m.brush.Y += dy
@@ -151,8 +149,7 @@ func (m *Model) JumpToFirstRow() {
 
 func (m *Model) JumpToLastRow() {
 	p := m.song.Patterns[m.editPattern]
-	patternHeight := len(p)
-	m.moveBrush(0, patternHeight-m.brush.H-m.brush.Y)
+	m.moveBrush(0, p.NumRows-m.brush.H-m.brush.Y)
 }
 
 func (m *Model) JumpToTopLeft() {
@@ -161,12 +158,9 @@ func (m *Model) JumpToTopLeft() {
 
 func (m *Model) JumpToBottomRight() {
 	p := m.song.Patterns[m.editPattern]
-	patternHeight := len(p)
-	editRow := p[m.editPos.Y]
-	patternWidth := len(editRow) * 6
 	m.moveBrush(
-		patternWidth-m.brush.W-m.brush.X,
-		patternHeight-m.brush.H-m.brush.Y,
+		p.Width()-m.brush.W-m.brush.X,
+		p.Height()-m.brush.H-m.brush.Y,
 	)
 }
 
@@ -188,8 +182,6 @@ func (m *Model) PrevTrack() {
 
 func (m *Model) stepBrushWidth(expandDir int) {
 	p := m.song.Patterns[m.editPattern]
-	editRow := p[m.editPos.Y]
-	patternWidth := len(editRow) * 6
 	if expandDir == m.brush.ExpandDir.X {
 		switch {
 		case m.brush.W < 2:
@@ -197,7 +189,7 @@ func (m *Model) stepBrushWidth(expandDir int) {
 		case m.brush.W < 6:
 			m.brush.W = 6
 		default:
-			m.brush.W = patternWidth
+			m.brush.W = p.Width()
 		}
 	} else {
 		switch {
@@ -226,13 +218,12 @@ func (m *Model) DecBrushWidth() {
 
 func (m *Model) stepBrushHeight(expandDir int) {
 	p := m.song.Patterns[m.editPattern]
-	patternHeight := len(p)
 	if expandDir == m.brush.ExpandDir.Y {
 		switch {
 		case m.brush.H < m.song.LPB:
 			m.brush.H = m.song.LPB
 		default:
-			m.brush.H = patternHeight
+			m.brush.H = p.Height()
 		}
 	} else {
 		switch {
@@ -332,7 +323,7 @@ func (m *Model) DecSelectionHeight() {
 func (m *Model) InsertBlock() {
 	p := m.song.Patterns[m.editPattern]
 	clone := p.clone()
-	patternHeight := len(p)
+	patternHeight := p.Height()
 	blockToMove := Rect{
 		m.sel.X,
 		m.sel.Y,
@@ -357,7 +348,7 @@ func (m *Model) DeleteBlock(backspace bool) {
 	}
 	p := m.song.Patterns[m.editPattern]
 	clone := p.clone()
-	patternHeight := len(p)
+	patternHeight := p.Height()
 	oldSel := m.sel
 	sel := oldSel
 	oldBrush := m.brush
@@ -419,7 +410,8 @@ func (m *Model) CurrentTrack() int {
 
 func (m *Model) InsertTrack() {
 	p := m.song.Patterns[m.editPattern]
-	clone := p.insertTrack(m.CurrentTrack())
+	at := m.CurrentTrack()
+	clone := p.insertTracks(at, 1)
 	m.submitAction(
 		func() {
 			m.ReplaceEditPattern(clone)
@@ -432,12 +424,11 @@ func (m *Model) InsertTrack() {
 
 func (m *Model) DeleteTrack() {
 	p := m.song.Patterns[m.editPattern]
-	editRow := p[m.editPos.Y]
-	numTracks := len(editRow)
-	if numTracks == 1 {
+	if p.NumTracks == 1 {
 		return
 	}
-	clone := p.deleteTrack(m.CurrentTrack())
+	at := m.CurrentTrack()
+	clone := p.deleteTracks(at, 1)
 	m.submitAction(
 		func() {
 			m.ReplaceEditPattern(clone)
@@ -491,9 +482,8 @@ func (m *Model) pasteBlock(pos Point, block Block) (prevBlock Block) {
 		return
 	}
 	p := m.song.Patterns[m.editPattern]
-	patternHeight := len(p)
-	editRow := p[pos.Y]
-	patternWidth := len(editRow) * 6
+	patternHeight := p.Height()
+	patternWidth := p.Width()
 	rect := Rect{
 		X: pos.X - pos.X%6 + m.pasteOffset,
 		Y: pos.Y,
