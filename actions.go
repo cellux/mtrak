@@ -248,26 +248,26 @@ func (m *Model) DecBrushHeight() {
 	m.stepBrushHeight(-1)
 }
 
-func (m *Model) applyWideBrush() {
-	if m.brush.X%6 == 0 && m.brush.W == 1 && m.sel.W == 1 {
-		for m.brush.W < 6 {
+func (m *Model) applyTempBrush(width int) {
+	if m.brush.W == 1 && m.sel.W == 1 {
+		for m.brush.W < width {
 			m.stepBrushWidth(1)
 		}
-		m.usingWideBrush = true
+		m.usingTempBrush = true
 	}
 }
 
-func (m *Model) revertWideBrush() {
-	if m.usingWideBrush {
+func (m *Model) revertTempBrush() {
+	if m.usingTempBrush {
 		m.CollapseBrush()
-		m.sel.X = m.brush.X
+		m.sel.X = m.editPos.X
 		m.sel.W = 1
-		m.usingWideBrush = false
+		m.usingTempBrush = false
 	}
 }
 
 func (m *Model) IncSelectionWidth() {
-	m.revertWideBrush()
+	m.revertTempBrush()
 	if m.sel.X+m.sel.W == m.brush.X+m.brush.W {
 		// brush is at right side of current selection
 		m.Right()
@@ -281,7 +281,7 @@ func (m *Model) IncSelectionWidth() {
 }
 
 func (m *Model) DecSelectionWidth() {
-	m.revertWideBrush()
+	m.revertTempBrush()
 	if m.sel.X == m.brush.X {
 		// brush is at left side of current selection
 		sel := m.sel

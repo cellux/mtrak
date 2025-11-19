@@ -53,7 +53,7 @@ func (m *Model) Reset() {
 	m.undoneActions = nil
 	m.clipboard = nil
 	m.pasteOffset = 0
-	m.usingWideBrush = false
+	m.usingTempBrush = false
 }
 
 func (m *Model) SetMode(newMode Mode) {
@@ -335,31 +335,37 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					m.SetMode(SelectMode)
 					m.DecSelectionWidth()
 				case key.Matches(msg, m.keymap.IncSelectionHeight):
-					m.applyWideBrush()
+					m.applyTempBrush(6)
 					m.SetMode(SelectMode)
 					m.IncSelectionHeight()
 				case key.Matches(msg, m.keymap.DecSelectionHeight):
-					m.applyWideBrush()
+					m.applyTempBrush(6)
 					m.SetMode(SelectMode)
 					m.DecSelectionHeight()
 				case key.Matches(msg, m.keymap.InsertBlock):
-					m.applyWideBrush()
+					m.applyTempBrush(6)
 					m.InsertBlock()
+					m.revertTempBrush()
 				case key.Matches(msg, m.keymap.DeleteBlock):
-					m.applyWideBrush()
+					m.applyTempBrush(6)
 					m.DeleteBlock(false)
+					m.revertTempBrush()
 				case key.Matches(msg, m.keymap.BackspaceBlock):
-					m.applyWideBrush()
+					m.applyTempBrush(6)
 					m.DeleteBlock(true)
+					m.revertTempBrush()
 				case key.Matches(msg, m.keymap.ZeroBlock):
-					m.applyWideBrush()
+					m.applyTempBrush(2)
 					m.ZeroBlock()
+					m.revertTempBrush()
 				case key.Matches(msg, m.keymap.Cut):
-					m.applyWideBrush()
+					m.applyTempBrush(6)
 					m.Cut()
+					m.revertTempBrush()
 				case key.Matches(msg, m.keymap.Copy):
-					m.applyWideBrush()
+					m.applyTempBrush(6)
 					m.Copy()
+					m.revertTempBrush()
 				case key.Matches(msg, m.keymap.Paste):
 					m.Paste()
 				case key.Matches(msg, m.keymap.PlayOrStop):
@@ -508,7 +514,7 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 			leaveSelectMode = true
 		}
 		if leaveSelectMode {
-			m.revertWideBrush()
+			m.revertTempBrush()
 			m.CollapseSelection()
 			m.ResetMode()
 			m.msgs <- msg

@@ -102,7 +102,7 @@ type Model struct {
 	undoneActions       []Action
 	clipboard           Block
 	pasteOffset         int
-	usingWideBrush      bool
+	usingTempBrush      bool
 }
 
 type (
