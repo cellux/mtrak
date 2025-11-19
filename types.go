@@ -17,18 +17,13 @@ type Pattern struct {
 	TrackDefaults Row   `json:"trackDefaults"`
 }
 
-type (
-	Scale         []int
-	ScaleRegistry map[string]Scale
-)
-
 type Song struct {
 	BPM       int        `json:"bpm"` // beats per minute
 	LPB       int        `json:"lpb"` // lines per beat
 	TPL       int        `json:"tpl"` // ticks per line
 	Patterns  []*Pattern `json:"patterns"`
 	Root      int        `json:"root"`      // root note
-	Scale     Scale      `json:"scale"`     // semitone offsets for each degree of the scale
+	Scale     ScaleId    `json:"scale"`     // scale id
 	Mode      int        `json:"mode"`      // offset of degree 0 within the scale
 	Chromatic bool       `json:"chromatic"` // note mode uses chromatic scale?
 }

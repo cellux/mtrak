@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -129,6 +130,48 @@ func (m *Model) GetFramesPerTick() int {
 	bps := m.GetBeatsPerSecond()
 	tpb := float64(m.GetTicksPerBeat())
 	return int(math.Round(sr / bps / tpb))
+}
+
+func (m *Model) GetRootNoteAsString() string {
+	root := m.song.Root
+	octave := root / 12
+	degree := root % 12
+	var note string
+	switch degree {
+	case 0:
+		note = "C-"
+	case 1:
+		note = "C#"
+	case 2:
+		note = "D-"
+	case 3:
+		note = "D#"
+	case 4:
+		note = "E-"
+	case 5:
+		note = "F-"
+	case 6:
+		note = "F#"
+	case 7:
+		note = "G-"
+	case 8:
+		note = "G#"
+	case 9:
+		note = "A-"
+	case 10:
+		note = "A#"
+	case 11:
+		note = "B-"
+	}
+	return fmt.Sprintf("%s%d", note, octave)
+}
+
+func (m *Model) GetScaleCode() string {
+	if m.song.Chromatic {
+		return "C"
+	}
+	scaleId := m.song.Scale
+	return scaleCodeById[scaleId]
 }
 
 func (m *Model) processPendingActions() {

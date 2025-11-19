@@ -4,6 +4,21 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+type (
+	Scale   []int
+	ScaleId int
+)
+
+const (
+	ScaleMajor ScaleId = iota
+	ScaleNaturalMinor
+	ScaleHarmonicMinor
+	ScaleMelodicMinor
+	ScalePentatonic
+	ScaleWholeTone
+	ScaleOctatonic
+)
+
 func buildScale(steps ...int) Scale {
 	scale := make(Scale, len(steps))
 	offset := 0
@@ -14,29 +29,57 @@ func buildScale(steps ...int) Scale {
 	return scale
 }
 
-var scales = func() ScaleRegistry {
-	scales := ScaleRegistry{
-		"major":            buildScale(2, 2, 1, 2, 2, 2, 1),
-		"natural minor":    buildScale(2, 1, 2, 2, 1, 2, 2),
-		"harmonic minor":   buildScale(2, 1, 2, 2, 1, 3, 1),
-		"melodic minor":    buildScale(2, 1, 2, 2, 2, 2, 1),
-		"major pentatonic": buildScale(2, 2, 3, 2, 3),
-		"whole tone":       buildScale(2, 2, 2, 2, 2, 2),
-		"octatonic":        buildScale(2, 1, 2, 1, 2, 1, 2, 1),
+var scales []Scale
+var scaleNameById []string
+var scaleCodeById []string
+var scaleIdByName map[string]ScaleId
+
+func init() {
+	scales = []Scale{
+		buildScale(2, 2, 1, 2, 2, 2, 1),    // major
+		buildScale(2, 1, 2, 2, 1, 2, 2),    // natural minor
+		buildScale(2, 1, 2, 2, 1, 3, 1),    // harmonic minor
+		buildScale(2, 1, 2, 2, 2, 2, 1),    // melodic minor
+		buildScale(2, 2, 3, 2, 3),          // pentatonic
+		buildScale(2, 2, 2, 2, 2, 2),       // whole tone
+		buildScale(2, 1, 2, 1, 2, 1, 2, 1), // octatonic
 	}
-	scales["M"] = scales["major"]
-	scales["minor"] = scales["natural minor"]
-	scales["min"] = scales["natural minor"]
-	scales["m"] = scales["natural minor"]
-	scales["hmin"] = scales["harmonic minor"]
-	scales["hm"] = scales["harmonic minor"]
-	scales["mmin"] = scales["melodic minor"]
-	scales["mm"] = scales["melodic minor"]
-	scales["pentatonic"] = scales["major pentatonic"]
-	scales["penta"] = scales["major pentatonic"]
-	scales["p"] = scales["major pentatonic"]
-	return scales
-}()
+	scaleNameById = []string{
+		"major",
+		"natural minor",
+		"harmonic minor",
+		"melodic minor",
+		"pentatonic",
+		"whole tone",
+		"octatonic",
+	}
+	scaleCodeById = []string{
+		"M",
+		"m",
+		"hm",
+		"mm",
+		"p",
+		"w",
+		"o",
+	}
+	scaleIdByName = map[string]ScaleId{
+		"M":          ScaleMajor,
+		"major":      ScaleMajor,
+		"minor":      ScaleNaturalMinor,
+		"min":        ScaleNaturalMinor,
+		"m":          ScaleNaturalMinor,
+		"hmin":       ScaleHarmonicMinor,
+		"hm":         ScaleHarmonicMinor,
+		"mmin":       ScaleMelodicMinor,
+		"mm":         ScaleMelodicMinor,
+		"pentatonic": ScalePentatonic,
+		"penta":      ScalePentatonic,
+		"p":          ScalePentatonic,
+		"octatonic":  ScaleOctatonic,
+		"octa":       ScaleOctatonic,
+		"o":          ScaleOctatonic,
+	}
+}
 
 var keysToScaleDegreesInNoteMode = map[string]int{
 	"z": 0,
@@ -46,6 +89,7 @@ var keysToScaleDegreesInNoteMode = map[string]int{
 	"b": 4,
 	"n": 5,
 	"m": 6,
+	",": 7,
 	"q": 12,
 	"w": 13,
 	"e": 14,
@@ -53,6 +97,7 @@ var keysToScaleDegreesInNoteMode = map[string]int{
 	"t": 16,
 	"y": 17,
 	"u": 18,
+	"i": 19,
 }
 
 var keysToScaleDegreesInChromaticMode = map[string]int{
@@ -68,6 +113,7 @@ var keysToScaleDegreesInChromaticMode = map[string]int{
 	"n": 9,
 	"j": 10,
 	"m": 11,
+	",": 12,
 	"q": 12,
 	"2": 13,
 	"w": 14,
@@ -80,10 +126,12 @@ var keysToScaleDegreesInChromaticMode = map[string]int{
 	"y": 21,
 	"7": 22,
 	"u": 23,
+	"i": 24,
 }
 
 func (m *Model) DegreeToMidiNote(degree int) int {
-	scale := m.song.Scale
+	scaleId := m.song.Scale
+	scale := scales[scaleId]
 	scaleSize := len(scale)
 	degree += m.song.Mode
 	return min(m.song.Root+(degree/scaleSize)*12+scale[degree%scaleSize], 127)
@@ -96,7 +144,9 @@ func (m *Model) KeyMsgToMidiNote(msg tea.KeyMsg) int {
 		}
 	} else {
 		if degree, ok := keysToScaleDegreesInNoteMode[msg.String()]; ok {
-			scaleSize := len(m.song.Scale)
+			scaleId := m.song.Scale
+			scale := scales[scaleId]
+			scaleSize := len(scale)
 			if degree >= 12 {
 				degree = degree - 12 + scaleSize
 			}

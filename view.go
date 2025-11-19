@@ -193,6 +193,13 @@ func (m *Model) HeaderView() string {
 	rb.WriteString("TPL:")
 	rb.SetStyle(&styles.headerValue)
 	rb.WriteString(fmt.Sprintf("%d", m.song.TPL))
+	rb.WriteByte(' ')
+	rb.SetStyle(&styles.headerLabel)
+	rb.WriteString("SCALE:")
+	rb.SetStyle(&styles.headerValue)
+	rb.WriteString(m.GetRootNoteAsString())
+	rb.WriteString(m.GetScaleCode())
+	rb.WriteString(fmt.Sprintf("@%d", m.song.Mode))
 	return rb.String()
 }
 

@@ -559,9 +559,6 @@ func FixSong(song *Song) {
 	if song.Root == 0 {
 		song.Root = 60
 	}
-	if song.Scale == nil {
-		song.Scale = scales["major"]
-	}
 }
 
 func (m *Model) LoadSong() {
