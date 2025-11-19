@@ -171,8 +171,8 @@ var defaultKeyMap = KeyMap{
 		key.WithHelp(" ", "play/stop"),
 	),
 	SetPlayFromRow: key.NewBinding(
-		key.WithKeys("s", "alt+ "),
-		key.WithHelp("s/M-space", "set play from row"),
+		key.WithKeys("s"),
+		key.WithHelp("s", "set play from row"),
 	),
 	EnterCommandMode: key.NewBinding(
 		key.WithKeys(":"),
