@@ -183,7 +183,7 @@ var defaultKeyMap = KeyMap{
 		key.WithHelp("n", "note mode"),
 	),
 	EnterChromaticMode: key.NewBinding(
-		key.WithKeys("shift+n"),
+		key.WithKeys("N"),
 		key.WithHelp("S-n", "chromatic mode"),
 	),
 	Undo: key.NewBinding(
