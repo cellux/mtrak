@@ -515,6 +515,14 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					m.InsertTrack()
 				case key.Matches(msg, m.keymap.DeleteTrack):
 					m.DeleteTrack()
+				case key.Matches(msg, m.keymap.IncSelectionWidth):
+					if m.song.Root < 127 {
+						m.song.Root++
+					}
+				case key.Matches(msg, m.keymap.DecSelectionWidth):
+					if m.song.Root > 0 {
+						m.song.Root--
+					}
 				case key.Matches(msg, m.keymap.IncSelectionHeight):
 					if m.song.Root-12 >= 0 {
 						m.song.Root -= 12
@@ -523,6 +531,12 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					if m.song.Root+12 <= 127 {
 						m.song.Root += 12
 					}
+				case key.Matches(msg, m.keymap.IncBrushWidth):
+					scale := scales[m.song.Scale]
+					m.song.Mode = (m.song.Mode + 1) % len(scale)
+				case key.Matches(msg, m.keymap.DecBrushWidth):
+					scale := scales[m.song.Scale]
+					m.song.Mode = (m.song.Mode - 1) % len(scale)
 				case key.Matches(msg, m.keymap.ZeroBlock):
 					m.setNoteByte(0)
 				case key.Matches(msg, m.keymap.PlayOrStop):
