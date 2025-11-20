@@ -27,8 +27,8 @@ func drain[T any](ch chan T) {
 func (m *Model) Reset() {
 	m.err = nil
 	//m.keymap = ?
-	m.mode = EditMode
-	m.prevmode = m.mode
+	m.SetMode(EditMode)
+	m.prevModes = nil
 	//m.windowSize
 	//m.midiEngine
 	//m.song
@@ -57,13 +57,23 @@ func (m *Model) Reset() {
 	m.usingTempBrush = false
 }
 
-func (m *Model) SetMode(newMode Mode) {
-	m.prevmode = m.mode
+func (m *Model) EnterMode(newMode Mode) {
+	m.prevModes = append(m.prevModes, m.mode)
 	m.mode = newMode
 }
 
-func (m *Model) ResetMode() {
-	m.mode = m.prevmode
+func (m *Model) SetMode(newMode Mode) {
+	m.mode = newMode
+}
+
+func (m *Model) LeaveMode() {
+	l := len(m.prevModes)
+	if l > 0 {
+		m.mode = m.prevModes[l-1]
+		m.prevModes = m.prevModes[:l-1]
+	} else {
+		m.mode = EditMode
+	}
 }
 
 func (m *Model) SetError(err error) {
@@ -100,6 +110,11 @@ func (m *Model) Play() {
 func (m *Model) Stop() {
 	m.isPlaying = false
 	m.playTick = 0
+}
+
+func (m *Model) Quit() tea.Cmd {
+	m.err = nil
+	return tea.Quit
 }
 
 func (m *Model) QuitWithError(err error) tea.Cmd {
@@ -334,7 +349,7 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 			default:
 				switch {
 				case key.Matches(msg, m.keymap.Quit):
-					cmds = append(cmds, tea.Quit)
+					cmds = append(cmds, m.Quit())
 				case key.Matches(msg, m.keymap.Up):
 					m.Up()
 				case key.Matches(msg, m.keymap.Down):
@@ -372,18 +387,18 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 				case key.Matches(msg, m.keymap.DecBrushHeight):
 					m.DecBrushHeight()
 				case key.Matches(msg, m.keymap.IncSelectionWidth):
-					m.SetMode(SelectMode)
+					m.EnterMode(SelectMode)
 					m.IncSelectionWidth()
 				case key.Matches(msg, m.keymap.DecSelectionWidth):
-					m.SetMode(SelectMode)
+					m.EnterMode(SelectMode)
 					m.DecSelectionWidth()
 				case key.Matches(msg, m.keymap.IncSelectionHeight):
 					m.applyTempBrush(6)
-					m.SetMode(SelectMode)
+					m.EnterMode(SelectMode)
 					m.IncSelectionHeight()
 				case key.Matches(msg, m.keymap.DecSelectionHeight):
 					m.applyTempBrush(6)
-					m.SetMode(SelectMode)
+					m.EnterMode(SelectMode)
 					m.DecSelectionHeight()
 				case key.Matches(msg, m.keymap.InsertBlock):
 					m.applyTempBrush(6)
@@ -475,7 +490,7 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 			} else {
 				switch {
 				case key.Matches(msg, m.keymap.Quit):
-					cmds = append(cmds, tea.Quit)
+					cmds = append(cmds, m.Quit())
 				case key.Matches(msg, m.keymap.Up):
 					m.Up()
 				case key.Matches(msg, m.keymap.Down):
@@ -514,6 +529,8 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					m.PlayOrStop()
 				case key.Matches(msg, m.keymap.SetPlayFromRow):
 					m.SetPlayFromRow()
+				case key.Matches(msg, m.keymap.EnterCommandMode):
+					m.EnterCommandMode()
 				case key.Matches(msg, m.keymap.EnterChromaticMode):
 					m.song.Chromatic = !m.song.Chromatic
 				case key.Matches(msg, m.keymap.Undo):
@@ -573,7 +590,7 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 		if leaveSelectMode {
 			m.revertTempBrush()
 			m.CollapseSelection()
-			m.ResetMode()
+			m.LeaveMode()
 			m.msgs <- msg
 		}
 		return cmds
@@ -591,7 +608,7 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 			case "esc":
 				m.commandModel.Blur()
 				m.commandModel.Reset()
-				m.ResetMode()
+				m.LeaveMode()
 			}
 		}
 		return cmds
@@ -617,7 +634,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc":
 			m.err = nil
-			m.ResetMode()
+			m.LeaveMode()
 			m.CollapseBrush()
 			m.CollapseSelection()
 		}

@@ -541,17 +541,17 @@ func (m *Model) SetPlayFromRow() {
 }
 
 func (m *Model) EnterCommandMode() {
-	m.SetMode(CommandMode)
+	m.EnterMode(CommandMode)
 	m.commandModel.Focus()
 }
 
 func (m *Model) EnterNoteMode() {
-	m.SetMode(NoteMode)
+	m.EnterMode(NoteMode)
 	m.song.Chromatic = false
 }
 
 func (m *Model) EnterChromaticMode() {
-	m.SetMode(NoteMode)
+	m.EnterMode(NoteMode)
 	m.song.Chromatic = true
 }
 

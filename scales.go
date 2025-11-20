@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
+	"regexp"
+	"strings"
 )
 
 type (
@@ -34,6 +37,8 @@ var scaleNameById []string
 var scaleCodeById []string
 var scaleIdByName map[string]ScaleId
 
+var scaleRegex *regexp.Regexp
+
 func init() {
 	scales = []Scale{
 		buildScale(2, 2, 1, 2, 2, 2, 1),    // major
@@ -63,22 +68,32 @@ func init() {
 		"o",
 	}
 	scaleIdByName = map[string]ScaleId{
-		"M":          ScaleMajor,
-		"major":      ScaleMajor,
-		"minor":      ScaleNaturalMinor,
-		"min":        ScaleNaturalMinor,
-		"m":          ScaleNaturalMinor,
-		"hmin":       ScaleHarmonicMinor,
-		"hm":         ScaleHarmonicMinor,
-		"mmin":       ScaleMelodicMinor,
-		"mm":         ScaleMelodicMinor,
-		"pentatonic": ScalePentatonic,
-		"penta":      ScalePentatonic,
-		"p":          ScalePentatonic,
-		"octatonic":  ScaleOctatonic,
-		"octa":       ScaleOctatonic,
-		"o":          ScaleOctatonic,
+		"M":              ScaleMajor,
+		"major":          ScaleMajor,
+		"natural minor":  ScaleNaturalMinor,
+		"minor":          ScaleNaturalMinor,
+		"min":            ScaleNaturalMinor,
+		"m":              ScaleNaturalMinor,
+		"harmonic minor": ScaleHarmonicMinor,
+		"hmin":           ScaleHarmonicMinor,
+		"hm":             ScaleHarmonicMinor,
+		"melodic minor":  ScaleMelodicMinor,
+		"mmin":           ScaleMelodicMinor,
+		"mm":             ScaleMelodicMinor,
+		"pentatonic":     ScalePentatonic,
+		"penta":          ScalePentatonic,
+		"p":              ScalePentatonic,
+		"whole tone":     ScaleWholeTone,
+		"whole":          ScaleWholeTone,
+		"octatonic":      ScaleOctatonic,
+		"octa":           ScaleOctatonic,
+		"o":              ScaleOctatonic,
 	}
+	scaleNames := make([]string, 0, len(scaleIdByName))
+	for name := range scaleIdByName {
+		scaleNames = append(scaleNames, name)
+	}
+	scaleRegex = regexp.MustCompile(`^(` + strings.Join(scaleNames, `|`) + `)\b`)
 }
 
 var keysToScaleDegreesInNoteMode = map[string]int{
@@ -154,4 +169,76 @@ func (m *Model) KeyMsgToMidiNote(msg tea.KeyMsg) int {
 		}
 	}
 	return -1
+}
+
+var noteRegex = regexp.MustCompile(`^([A-G])(#|-)([0-9])`)
+
+var degreeByNoteName = map[byte]int{
+	'C': 0,
+	'D': 2,
+	'E': 4,
+	'F': 5,
+	'G': 7,
+	'A': 9,
+	'B': 11,
+}
+
+func (m *Model) parseNote(s string) (note int, consumed int, err error) {
+	parts := noteRegex.FindStringSubmatch(strings.ToUpper(s))
+	if parts == nil {
+		return -1, 0, fmt.Errorf("invalid note: %s", s)
+	}
+	degree := degreeByNoteName[parts[1][0]]
+	octave := int(parts[3][0] - '0')
+	note = octave*12 + degree
+	if parts[2][0] == '#' {
+		note++
+	}
+	return min(note, 127), len(parts[0]), nil
+}
+
+func (m *Model) parseScale(s string) (root int, scale ScaleId, mode int, err error) {
+	root = -1
+	scale = -1
+	mode = -1
+	for {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			return root, scale, mode, nil
+		}
+		_scaleName := scaleRegex.FindString(s)
+		if _scaleName != "" {
+			scale = scaleIdByName[_scaleName]
+			s = s[len(_scaleName):]
+			continue
+		}
+		_note, consumed, err := m.parseNote(s)
+		if err == nil {
+			root = _note
+			s = s[consumed:]
+			continue
+		}
+		_mode, consumed, err := m.parseMode(s)
+		if err == nil {
+			mode = _mode
+			s = s[consumed:]
+			continue
+		}
+		return -1, -1, -1, fmt.Errorf("invalid scale: %s", s)
+	}
+}
+
+var modeRegex = regexp.MustCompile(`^\+?[0-9]+`)
+
+func (m *Model) parseMode(s string) (mode int, consumed int, err error) {
+	modeString := modeRegex.FindString(s)
+	if modeString == "" {
+		return -1, 0, fmt.Errorf("invalid mode: %s", s)
+	}
+	mode, _ = parseInt(modeString)
+	scale := scales[m.song.Scale]
+	if mode < 0 || mode >= len(scale) {
+		return -1, 0, fmt.Errorf("invalid mode: %d: scale has only %d degrees", mode, len(scale))
+	}
+	return mode, len(modeString), nil
 }

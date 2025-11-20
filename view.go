@@ -92,8 +92,8 @@ func init() {
 	colors.noteFill = colorful.Hcl(70, 0.12, 0.40)
 	colors.noteText = colors.cursorText
 
-	colors.errorFill = colorful.Hcl(25, 0.14, 0.40)
-	colors.errorText = colorful.Hcl(25, 0.14, 0.66)
+	colors.errorFill = colorful.Hcl(25, 0.30, 0.20)
+	colors.errorText = colorful.Hcl(25, 0.14, 0.88)
 
 	for i := range len(patternPalette) {
 		text := colors.patternText
@@ -203,7 +203,7 @@ func (m *Model) HeaderView() string {
 	rb.WriteString("SCA:")
 	rb.SetStyle(&styles.headerValue)
 	rb.WriteString(m.GetScaleCode())
-	rb.WriteString(fmt.Sprintf("@%d", m.song.Mode))
+	rb.WriteString(fmt.Sprintf("+%d", m.song.Mode))
 	return rb.String()
 }
 

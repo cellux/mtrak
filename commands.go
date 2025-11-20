@@ -66,6 +66,42 @@ func (m *Model) ExecuteCommand(command string) {
 			}
 			m.song.TPL = tpl
 		}
+	case "root":
+		if len(items) > 1 {
+			root, _, err := m.parseNote(items[1])
+			if err != nil {
+				m.SetError(err)
+				return
+			}
+			m.song.Root = root
+		}
+	case "scale":
+		if len(items) > 1 {
+			item := strings.Join(items[1:], " ")
+			root, scale, mode, err := m.parseScale(item)
+			if err != nil {
+				m.SetError(err)
+				return
+			}
+			if root >= 0 {
+				m.song.Root = root
+			}
+			if scale >= 0 {
+				m.song.Scale = scale
+			}
+			if mode >= 0 {
+				m.song.Mode = mode
+			}
+		}
+	case "mode":
+		if len(items) > 1 {
+			mode, _, err := m.parseMode(items[1])
+			if err != nil {
+				m.SetError(err)
+				return
+			}
+			m.song.Mode = mode
+		}
 	case "rows":
 		if len(items) > 1 {
 			numRows, err := parseInt(items[1])

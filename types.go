@@ -72,7 +72,7 @@ type Model struct {
 	err                 error
 	keymap              *KeyMap
 	mode                Mode
-	prevmode            Mode
+	prevModes           []Mode
 	windowSize          Size
 	midiEngine          *MidiEngine
 	song                *Song
