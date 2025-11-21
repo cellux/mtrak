@@ -75,7 +75,7 @@ func (m *Model) ExecuteCommand(command string) {
 			}
 			m.song.Root = root
 		}
-	case "scale":
+	case "scale", "sca", "s":
 		if len(items) > 1 {
 			item := strings.Join(items[1:], " ")
 			root, scale, mode, err := m.parseScale(item)
@@ -93,7 +93,7 @@ func (m *Model) ExecuteCommand(command string) {
 				m.song.Mode = mode
 			}
 		}
-	case "mode":
+	case "mode", "m":
 		if len(items) > 1 {
 			mode, _, err := m.parseMode(items[1])
 			if err != nil {
