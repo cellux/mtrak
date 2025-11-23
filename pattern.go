@@ -10,9 +10,6 @@ func makePattern(rowCount, trackCount int) *Pattern {
 		rows[i] = make(Row, trackCount)
 	}
 	trackDefaults := make(Row, trackCount)
-	for i := range trackCount {
-		trackDefaults[i] = defaultMidiMessage
-	}
 	return &Pattern{
 		Rows:          rows,
 		NumRows:       rowCount,
@@ -52,9 +49,6 @@ func (p *Pattern) insertTracks(at, count int) *Pattern {
 	}
 	trackDefaults := make(Row, p.NumTracks+count)
 	trackDefaults = slices.Replace(trackDefaults, 0, at, p.TrackDefaults[:at]...)
-	for i := range count {
-		trackDefaults[at+i] = defaultMidiMessage
-	}
 	trackDefaults = slices.Replace(trackDefaults, at+count, len(trackDefaults), p.TrackDefaults[at:]...)
 	return &Pattern{
 		Rows:          rows,

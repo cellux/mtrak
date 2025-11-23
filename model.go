@@ -652,6 +652,8 @@ func (m *Model) HandleMessage(msg tea.Msg) (cmds []tea.Cmd) {
 	return modeSpecificMessageHandlers[m.mode](m, msg)
 }
 
+const MaxUndoableActions = 64
+
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
