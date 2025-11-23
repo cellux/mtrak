@@ -9,7 +9,7 @@ import (
 
 type (
 	Scale   []int
-	ScaleId int
+	ScaleId = int
 )
 
 const (
