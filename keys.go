@@ -5,44 +5,44 @@ import (
 )
 
 type KeyMap struct {
-	Quit               key.Binding
-	Up                 key.Binding
-	Down               key.Binding
-	PageUp             key.Binding
-	PageDown           key.Binding
-	JumpToFirstRow     key.Binding
-	JumpToLastRow      key.Binding
-	JumpToTopLeft      key.Binding
-	JumpToBottomRight  key.Binding
-	Left               key.Binding
-	Right              key.Binding
-	NextTrack          key.Binding
-	PrevTrack          key.Binding
-	InsertTrack        key.Binding
-	DeleteTrack        key.Binding
-	IncBrushWidth      key.Binding
-	DecBrushWidth      key.Binding
-	IncBrushHeight     key.Binding
-	DecBrushHeight     key.Binding
-	IncSelectionWidth  key.Binding
-	DecSelectionWidth  key.Binding
-	IncSelectionHeight key.Binding
-	DecSelectionHeight key.Binding
-	InsertBlock        key.Binding
-	DeleteBlock        key.Binding
-	ZeroBlock          key.Binding
-	BackspaceBlock     key.Binding
-	PlayOrStop         key.Binding
-	Cut                key.Binding
-	Copy               key.Binding
-	Paste              key.Binding
-	SetPlayFromRow     key.Binding
-	EnterCommandMode   key.Binding
-	EnterNoteMode      key.Binding
-	EnterChromaticMode key.Binding
-	Undo               key.Binding
-	Redo               key.Binding
-	Save               key.Binding
+	Quit                key.Binding
+	Up                  key.Binding
+	Down                key.Binding
+	PageUp              key.Binding
+	PageDown            key.Binding
+	JumpToFirstRow      key.Binding
+	JumpToLastRow       key.Binding
+	JumpToTopLeft       key.Binding
+	JumpToBottomRight   key.Binding
+	Left                key.Binding
+	Right               key.Binding
+	NextTrack           key.Binding
+	PrevTrack           key.Binding
+	InsertTrack         key.Binding
+	DeleteTrack         key.Binding
+	IncBrushWidth       key.Binding
+	DecBrushWidth       key.Binding
+	IncBrushHeight      key.Binding
+	DecBrushHeight      key.Binding
+	IncSelectionWidth   key.Binding
+	DecSelectionWidth   key.Binding
+	IncSelectionHeight  key.Binding
+	DecSelectionHeight  key.Binding
+	InsertBlock         key.Binding
+	DeleteBlock         key.Binding
+	ZeroBlock           key.Binding
+	BackspaceBlock      key.Binding
+	PlayOrStop          key.Binding
+	Cut                 key.Binding
+	Copy                key.Binding
+	Paste               key.Binding
+	SetPlayFromRow      key.Binding
+	EnterCommandMode    key.Binding
+	EnterNoteMode       key.Binding
+	ToggleChromaticMode key.Binding
+	Undo                key.Binding
+	Redo                key.Binding
+	Save                key.Binding
 }
 
 var defaultKeyMap = KeyMap{
@@ -179,12 +179,12 @@ var defaultKeyMap = KeyMap{
 		key.WithHelp(":", "enter command"),
 	),
 	EnterNoteMode: key.NewBinding(
-		key.WithKeys("n"),
-		key.WithHelp("n", "note mode"),
+		key.WithKeys("ctrl+n"),
+		key.WithHelp("C-n", "note mode"),
 	),
-	EnterChromaticMode: key.NewBinding(
+	ToggleChromaticMode: key.NewBinding(
 		key.WithKeys("N"),
-		key.WithHelp("S-n", "chromatic mode"),
+		key.WithHelp("S-n", "toggle chromatic mode"),
 	),
 	Undo: key.NewBinding(
 		key.WithKeys("ctrl+z"),

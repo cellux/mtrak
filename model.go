@@ -74,6 +74,10 @@ func (m *Model) LeaveMode() {
 	} else {
 		m.mode = EditMode
 	}
+	m.err = nil
+	m.revertTempBrush()
+	m.CollapseBrush()
+	m.CollapseSelection()
 }
 
 func (m *Model) SetError(err error) {
@@ -184,9 +188,10 @@ func (m *Model) GetRootNoteAsString() string {
 func (m *Model) GetScaleCode() string {
 	if m.song.Chromatic {
 		return "C"
+	} else {
+		scaleId := m.song.Scale
+		return scaleCodeById[scaleId]
 	}
-	scaleId := m.song.Scale
-	return scaleCodeById[scaleId]
 }
 
 func (m *Model) processPendingActions() {
@@ -434,8 +439,6 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					m.EnterCommandMode()
 				case key.Matches(msg, m.keymap.EnterNoteMode):
 					m.EnterNoteMode()
-				case key.Matches(msg, m.keymap.EnterChromaticMode):
-					m.EnterChromaticMode()
 				case key.Matches(msg, m.keymap.Undo):
 					m.Undo()
 				case key.Matches(msg, m.keymap.Redo):
@@ -551,8 +554,10 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					m.SetPlayFromRow()
 				case key.Matches(msg, m.keymap.EnterCommandMode):
 					m.EnterCommandMode()
-				case key.Matches(msg, m.keymap.EnterChromaticMode):
-					m.song.Chromatic = !m.song.Chromatic
+				case key.Matches(msg, m.keymap.ToggleChromaticMode):
+					m.ToggleChromaticMode()
+				case key.Matches(msg, m.keymap.EnterNoteMode):
+					m.LeaveMode()
 				case key.Matches(msg, m.keymap.Undo):
 					m.Undo()
 				case key.Matches(msg, m.keymap.Redo):
@@ -608,8 +613,6 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 			leaveSelectMode = true
 		}
 		if leaveSelectMode {
-			m.revertTempBrush()
-			m.CollapseSelection()
 			m.LeaveMode()
 			m.msgs <- msg
 		}
@@ -651,16 +654,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			m.err = nil
+		if msg.String() == "esc" {
 			m.LeaveMode()
-			m.CollapseBrush()
-			m.CollapseSelection()
 		}
 	case tea.WindowSizeMsg:
 		m.windowSize.W = msg.Width
 		m.windowSize.H = msg.Height
+		m.msgs <- redrawMsg{}
 	}
 	cmds = append(cmds, m.HandleMessage(msg)...)
 	return m, tea.Batch(cmds...)

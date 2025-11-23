@@ -155,7 +155,7 @@ func (m *Model) DegreeToMidiNote(degree int) int {
 func (m *Model) KeyMsgToMidiNote(msg tea.KeyMsg) int {
 	if m.song.Chromatic {
 		if degree, ok := keysToScaleDegreesInChromaticMode[msg.String()]; ok {
-			return min(m.song.Root + degree)
+			return min(m.song.Root+degree, 127)
 		}
 	} else {
 		if degree, ok := keysToScaleDegreesInNoteMode[msg.String()]; ok {

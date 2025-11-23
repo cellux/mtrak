@@ -550,9 +550,8 @@ func (m *Model) EnterNoteMode() {
 	m.song.Chromatic = false
 }
 
-func (m *Model) EnterChromaticMode() {
-	m.EnterMode(NoteMode)
-	m.song.Chromatic = true
+func (m *Model) ToggleChromaticMode() {
+	m.song.Chromatic = !m.song.Chromatic
 }
 
 func FixSong(song *Song) {
