@@ -533,10 +533,16 @@ var modeSpecificMessageHandlers = map[Mode]MessageHandler{
 					}
 				case key.Matches(msg, m.keymap.IncBrushWidth):
 					scale := scales[m.song.Scale]
-					m.song.Mode = (m.song.Mode + 1) % len(scale)
+					m.song.Mode++
+					for m.song.Mode >= len(scale) {
+						m.song.Mode -= len(scale)
+					}
 				case key.Matches(msg, m.keymap.DecBrushWidth):
 					scale := scales[m.song.Scale]
-					m.song.Mode = (m.song.Mode - 1) % len(scale)
+					m.song.Mode--
+					for m.song.Mode < 0 {
+						m.song.Mode += len(scale)
+					}
 				case key.Matches(msg, m.keymap.ZeroBlock):
 					m.setNoteByte(0)
 				case key.Matches(msg, m.keymap.PlayOrStop):
